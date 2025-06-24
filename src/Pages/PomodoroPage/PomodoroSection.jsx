@@ -1,189 +1,63 @@
-import React, { useState, useEffect, useRef } from "react";
-import tasksData from "../../assets/tasks";
-import goals from "../../assets/goals";
-import PomodoroSection from "./PomodoroSection";
-import TaskSection from "./TaskSection";
+import React, { useEffect, useRef, useState } from "react";
 
-const PomodoroPage = () => {
-  const today = new Date().toISOString().split("T")[0];
+const PomodoroSection = () => {
+  const pomodoroSessionArray = [
+    { sessionName: "focus", seconds: 10 },
+    { sessionName: "short", seconds: 3 },
+    { sessionName: "long", seconds: 5 },
+  ];
+  const [currentSession, setCurrentSession] = useState(pomodoroSessionArray[0]);
+  console.log(currentSession);
+  const [focusLoop, setFocusLoop] = useState(0);
 
-  const [tasks, setTasks] = useState(tasksData);
-  const [todayTasks, setTodayTasks] = useState(
-    tasksData.filter(
-      (task) =>
-        task.reminder.startsWith(today) &&
-        task.pomodorosDone < task.pomodoroNumbers
-    )
-  );
-  const [currentTask, setCurrentTask] = useState(null);
-  const [finishedTasks, setFinishedTasks] = useState([]);
-  const [secondsLeft, setSecondsLeft] = useState(1500);
+  //work on decreasing timer
+  const [secondsLeft, setSecondsLeft] = useState(currentSession.seconds);
   const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-  const [sessionType, setSessionType] = useState("focus");
-  const [pomodoroCycle, setPomodoroCycle] = useState(1);
-
-  const timerRef = useRef(null);
-
-  const defaultDurations = {
-    focus: 10, // Change to 1500 for production
-    shortBreak: 3,
-    longBreak: 5,
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")} : ${String(secs).padStart(
-      2,
-      "0"
-    )}`;
-  };
-
-  const getGoalName = (taskId) => {
-    const goal = goals.find((g) => g.tasks?.includes(taskId));
-    return goal ? goal.name : null;
-  };
-
-  const updateTaskInState = (updatedTask) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-    );
-    setTodayTasks((prev) =>
-      updatedTask.pomodorosDone >= updatedTask.pomodoroNumbers
-        ? prev.filter((t) => t.id !== updatedTask.id)
-        : prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-    );
-  };
-
-  const startTimer = () => {
-    if (!currentTask || isRunning) return;
-    setIsRunning(true);
-    setIsPaused(false);
-    timerRef.current = setInterval(() => {
-      setSecondsLeft((prev) => prev - 1);
-    }, 1000);
-  };
-
-  const pauseTimer = () => {
-    clearInterval(timerRef.current);
-    setIsRunning(false);
-    setIsPaused(true);
-  };
-
-  const resumeTimer = () => {
-    if (!currentTask || isRunning) return;
-    setIsRunning(true);
-    setIsPaused(false);
-    timerRef.current = setInterval(() => {
-      setSecondsLeft((prev) => prev - 1);
-    }, 1000);
-  };
-
-  const resetTimer = () => {
-    clearInterval(timerRef.current);
-    setIsRunning(false);
-    setIsPaused(false);
-    setSecondsLeft(defaultDurations.focus);
-  };
-
-  const skipAndMarkDone = () => {
-    clearInterval(timerRef.current);
-    setIsRunning(false);
-    setIsPaused(false);
-    endFocusSession();
-  };
-
-  const handleTaskSelect = (task) => {
-    resetTimer();
-    setCurrentTask(task);
-    setSessionType("focus");
-    setPomodoroCycle(1);
-    setSecondsLeft(defaultDurations.focus);
-  };
-
-  const endFocusSession = () => {
-    if (!currentTask) return;
-
-    const updatedTask = {
-      ...currentTask,
-      pomodorosDone: currentTask.pomodorosDone + 1,
-    };
-
-    updateTaskInState(updatedTask);
-
-    if (updatedTask.pomodorosDone >= updatedTask.pomodoroNumbers) {
-      setFinishedTasks((prev) => [...prev, updatedTask]);
-      setCurrentTask(null);
-    } else {
-      setCurrentTask(updatedTask);
-    }
-
-    if (pomodoroCycle < 4) {
-      setSessionType("shortBreak");
-      setSecondsLeft(defaultDurations.shortBreak);
-      setPomodoroCycle((prev) => prev + 1);
-    } else {
-      setSessionType("longBreak");
-      setSecondsLeft(defaultDurations.longBreak);
-      setPomodoroCycle(1);
-    }
-  };
-
-  const endBreakSession = () => {
-    if (
-      currentTask &&
-      currentTask.pomodorosDone < currentTask.pomodoroNumbers
-    ) {
-      setSessionType("focus");
-      setSecondsLeft(defaultDurations.focus);
-    } else {
-      setCurrentTask(null);
-      setSessionType("focus");
-      setSecondsLeft(defaultDurations.focus);
-    }
-  };
+  const timeRef = useRef(null);
 
   useEffect(() => {
-    if (secondsLeft > 0) return;
+    if (!isRunning) return;
 
-    clearInterval(timerRef.current);
+    timeRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timeRef.current);
+          if (currentSession == pomodoroSessionArray[0]) {
+            if (focusLoop == 4) {
+              setCurrentSession(pomodoroSessionArray[2]);
+              setFocusLoop(0);
+            } else {
+              setFocusLoop();
+              setCurrentSession(pomodoroSessionArray[1]);
+            }
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    //cleanup on unmount or when isRunnin changes
+    return () => {
+      clearInterval(timeRef.current);
+    };
+  }, [isRunning]);
+
+  //buttons for timer
+  const handleStart = () => {
+    setIsRunning(true);
+  };
+  const handlePause = () => {
     setIsRunning(false);
-
-    if (sessionType === "focus") {
-      endFocusSession();
-    } else {
-      endBreakSession();
-    }
-  }, [secondsLeft]);
-
+  };
   return (
-    <div className="flex flex-col lg:flex-row items-start justify-center gap-8 px-4 py-10 bg-gray-100 min-h-screen w-full">
-      <PomodoroSection
-        currentTask={currentTask}
-        secondsLeft={secondsLeft}
-        isRunning={isRunning}
-        isPaused={isPaused}
-        startTimer={startTimer}
-        pauseTimer={pauseTimer}
-        resumeTimer={resumeTimer}
-        skipAndMarkDone={skipAndMarkDone}
-        showSkipConfirm={showSkipConfirm}
-        setShowSkipConfirm={setShowSkipConfirm}
-        formatTime={formatTime}
-        sessionType={sessionType}
-        defaultDurations={defaultDurations}
-      />
-
-      <TaskSection
-        todayTasks={todayTasks}
-        currentTask={currentTask}
-        handleTaskSelect={handleTaskSelect}
-        getGoalName={getGoalName}
-      />
-    </div>
+    <section>
+      <h2>Focus Time</h2>
+      <h4>{secondsLeft}</h4>
+      {!isRunning && <button onClick={handleStart}>start/resume</button>}
+      {isRunning && <button onClick={handlePause}>pause</button>}
+    </section>
   );
 };
 
-export default PomodoroPage;
+export default PomodoroSection;
