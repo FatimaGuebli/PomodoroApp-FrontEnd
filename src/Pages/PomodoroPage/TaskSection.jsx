@@ -1,30 +1,16 @@
-import React, { useState } from "react";
-import AddNewTask from "../../components/AddNewTask";
+import React from "react";
+import DisplayTodaysTasks from "./DisplayTodaysTasks";
 
 const TaskSection = () => {
-  const [todaystasks, setTodaysTasks] = useState([]);
-
-  //new task displays
-  const [displayNewTaskForm, setDisplayNewTaskForm] = useState(false);
-
-  const handleDisplayNewtaskForm = () => {
-    const buttonstate = displayNewTaskForm;
-    setDisplayNewTaskForm(!buttonstate);
-  };
-
-  const handleAddTask = (task) => {
-    setTodaysTasks((prev) => [...prev, task]);
-  };
-
   return (
     <section>
+      <h2>Today's Tasks</h2>
       <div>
-        <h2>Today's tasks</h2>
-        <div>
-          <button onClick={handleDisplayNewtaskForm}>new task</button>
-          <button>add an existing task to the list</button>
-        </div>
-        {displayNewTaskForm && <AddNewTask onAddTask={handleAddTask} />}
+        <button>new task</button>
+        <button>add an existing task</button>
+      </div>
+      <div>
+        <DisplayTodaysTasks />
       </div>
     </section>
   );
