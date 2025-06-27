@@ -1,85 +1,69 @@
-import React, { useState } from "react";
-import tasks from "../data/tasks";
+import React, { useEffect, useState } from "react";
 
-const AddNewTask = ({ onAddTask }) => {
-  const [description, setDescription] = useState("");
-  const [pomodoros, setPomodoros] = useState(1);
+const AddNewTask = () => {
+  const [pomodoroNumber, setPomodoroNumber] = useState(1);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (description === "") return;
-
-    const generateUniqueId = () => {
-      let id;
-      const usedIds = tasks.map((task) => task.id);
-      do {
-        id = Math.floor(Math.random() * 10000); // 0 to 9999
-      } while (usedIds.includes(id));
-      return id;
-    };
-
-    const newTask = {
-      id: generateUniqueId(),
-      description,
-      pomodoroNumbers: pomodoros,
-      pomodorosDone: 0,
-    };
-
-    onAddTask(newTask);
-    setDescription("");
-    setPomodoros(1);
+  const handleIncreaseButton = () => {
+    const currentNumber = pomodoroNumber;
+    setPomodoroNumber(currentNumber + 1);
   };
 
-  const increase = () => setPomodoros((prev) => prev + 1);
-  const decrease = () => setPomodoros((prev) => (prev > 1 ? prev - 1 : 1));
+  const handleDecreaseButton = () => {
+    const currentNumber = pomodoroNumber;
+    if (currentNumber != 1) {
+      setPomodoroNumber(currentNumber - 1);
+    }
+  };
+
+  //fetch goals
+  const [goalsList, setGoalsList] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/goals");
+        if (!response.ok) {
+          throw Error("data from goals is not fetched properly");
+        }
+
+        const goals = await response.json();
+        setGoalsList(goals);
+
+        //console
+        console.log(goals);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    setTimeout(() => {
+      (async () => await fetchData())();
+    }, 2000);
+  }, []);
+
+  //select a goal
+  const [goalSelected, setSelectedGoal] = useState(null);
+
+  const handleselectGoal = (e) => {
+    setSelectedGoal(e.target.value);
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-md mx-auto p-4 bg-white rounded shadow space-y-4"
-    >
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Task Description:
-        </label>
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          placeholder="e.g. Read chapter 5"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Number of Pomodoros:
-        </label>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={decrease}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            -
-          </button>
-          <span className="text-lg">{pomodoros}</span>
-          <button
-            type="button"
-            onClick={increase}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-      >
-        Add Task
+    <form>
+      <label>task description</label>
+      <input />
+      <label>number of pomodoros</label>
+      <span>{pomodoroNumber} </span>
+      <button type="button" onClick={handleIncreaseButton}>
+        +
       </button>
+      <button type="button" onClick={handleDecreaseButton}>
+        -
+      </button>
+      <label>select a goal</label>
+      <select value={selectGoalId} onChange={handleselectGoal}>
+        <option></option>
+      </select>
     </form>
   );
 };

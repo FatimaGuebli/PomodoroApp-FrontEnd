@@ -14,7 +14,7 @@ const DisplayTodaysTasks = () => {
         const todaysTasksArray = await response.json();
         setTodaysTasksList(todaysTasksArray);
         //console
-        console.log("fetched : ", todaysTasksArray);
+        //console.log("fetched : ", todaysTasksArray);
         setTodaysTasksList(todaysTasksArray);
       } catch (err) {
         console.log(err.message);
@@ -41,7 +41,7 @@ const DisplayTodaysTasks = () => {
         setTasksList(tasksArray);
 
         //console
-        console.log(tasksArray);
+        //console.log(tasksArray);
 
         setTasksList(tasksArray);
       } catch (err) {
