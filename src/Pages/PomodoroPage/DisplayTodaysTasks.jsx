@@ -15,7 +15,6 @@ const DisplayTodaysTasks = () => {
         setTodaysTasksList(todaysTasksArray);
         //console
         //console.log("fetched : ", todaysTasksArray);
-        setTodaysTasksList(todaysTasksArray);
       } catch (err) {
         console.log(err.message);
       }
@@ -58,7 +57,6 @@ const DisplayTodaysTasks = () => {
   const todaysTasks = tasksList.filter((task) =>
     todaysTasksList.some((t) => t.id === task.id)
   );
-  console.log("filtered list is now ", todaysTasks);
 
   return (
     <div>
