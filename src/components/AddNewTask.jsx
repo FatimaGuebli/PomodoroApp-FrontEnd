@@ -1,96 +1,77 @@
 import React, { useEffect, useState } from "react";
 
 const AddNewTask = () => {
-  //task description
+  // task description
   const [taskDescription, setTaskDescription] = useState("");
 
-  //select pomodoro numbers for the task
+  // select pomodoro numbers for the task
   const [pomodoroNumber, setPomodoroNumber] = useState(1);
 
   const handleIncreaseButton = () => {
-    const currentNumber = pomodoroNumber;
-    setPomodoroNumber(currentNumber + 1);
+    setPomodoroNumber((prev) => prev + 1);
   };
 
   const handleDecreaseButton = () => {
-    const currentNumber = pomodoroNumber;
-    if (currentNumber != 1) {
-      setPomodoroNumber(currentNumber - 1);
-    }
+    setPomodoroNumber((prev) => (prev > 1 ? prev - 1 : prev));
   };
 
-  //fetch goals
+  // fetch goals
   const [goalsList, setGoalsList] = useState([]);
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchGoals = async () => {
       try {
         const response = await fetch("http://localhost:3001/goals");
-        if (!response.ok) {
-          throw Error("data from goals is not fetched properly");
-        }
-
+        if (!response.ok) throw Error("Failed to fetch goals");
         const goals = await response.json();
         setGoalsList(goals);
-
-        //console
-        console.log(goals);
       } catch (err) {
         console.log(err.message);
       }
     };
 
     setTimeout(() => {
-      (async () => await fetchData())();
+      fetchGoals();
     }, 2000);
   }, []);
 
-  //select a goal
+  // fetch tasks to calculate next ID
+  const [tasksList, setTasksList] = useState([]);
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/tasks");
+        if (!response.ok) throw Error("Failed to fetch tasks");
+        const tasksArray = await response.json();
+        setTasksList(tasksArray);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    setTimeout(() => {
+      fetchTasks();
+    }, 2000);
+  }, []);
+
+  // select a goal
   const [selectedGoal, setSelectedGoal] = useState("");
 
   const handleselectGoal = (e) => {
     setSelectedGoal(e.target.value);
   };
 
-  //handle submission
+  // handle form submit
   const handleSubmit = async (e) => {
-    //if task description is empty
+    e.preventDefault(); // prevent page reload
+
     if (!taskDescription.trim()) {
-      alert("please fill the task description input");
+      alert("Please fill in the task description.");
       return;
     }
-
-    const [tasksList, setTasksList] = useState([]);
-
-    //create new id for the task
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await fetch("http://localhost:3001/tasks");
-          if (!response.ok) {
-            throw Error(
-              "data fetched in add new task, tasks array are not fetch properly"
-            );
-          }
-
-          const tasksArray = await response.json();
-          setTasksList(tasksArray);
-        } catch (err) {
-          console.log(err.message);
-        }
-
-        fetchData();
-      };
-
-      setTimeout(() => {
-        (async () => await fetchData())();
-      }, 2000);
-    }, []);
 
     const newId =
       tasksList.length > 0 ? Math.max(...tasksList.map((t) => t.id)) + 1 : 1;
 
-    //create new task
     const newTask = {
       id: newId,
       description: taskDescription,
@@ -98,7 +79,6 @@ const AddNewTask = () => {
       pomodorosDone: 0,
     };
 
-    //update the new task into the data (json file currently)
     try {
       const response = await fetch("http://localhost:3001/tasks", {
         method: "POST",
@@ -107,38 +87,57 @@ const AddNewTask = () => {
       });
 
       if (!response.ok) throw Error("Failed to add task");
-
       alert("Task added successfully!");
-      // Optionally reset inputs here
     } catch (err) {
       console.log(err.message);
+    }
+
+    // if the task is linked to a goal
+    if (selectedGoal) {
+      try {
+        const goal = goalsList.find((g) => g.id === selectedGoal);
+
+        const updatedGoal = {
+          ...goal,
+          tasks: [...(goal.tasks || []), newId],
+        };
+
+        const response = await fetch(`http://localhost:3001/goals/${goal.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedGoal),
+        });
+
+        if (!response.ok) {
+          throw Error("failed to update goal");
+        }
+      } catch (err) {
+        console.log(err.message);
+      }
     }
   };
 
   return (
-    <form>
-      <label>task description</label>
+    <form onSubmit={handleSubmit}>
+      <label>Task Description</label>
       <input
         required
         value={taskDescription}
         onChange={(e) => setTaskDescription(e.target.value)}
       />
 
-      <label>number of pomodoros</label>
+      <label>Number of Pomodoros</label>
       <span>{pomodoroNumber} </span>
-
       <button type="button" onClick={handleIncreaseButton}>
         +
       </button>
-
       <button type="button" onClick={handleDecreaseButton}>
         -
       </button>
 
-      <label>select a goal</label>
+      <label>Select a Goal</label>
       <select value={selectedGoal} onChange={handleselectGoal}>
-        <option value="">no goal selected</option>
-
+        <option value="">No goal selected</option>
         {goalsList.map((goal) => (
           <option key={goal.id} value={goal.id}>
             {goal.name}
@@ -146,7 +145,7 @@ const AddNewTask = () => {
         ))}
       </select>
 
-      <button>create task</button>
+      <button type="submit">Create Task</button>
     </form>
   );
 };
