@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const AddNewTask = () => {
+const AddNewTask = (setNewtaskId) => {
   // task description
   const [taskDescription, setTaskDescription] = useState("");
 
@@ -63,6 +63,7 @@ const AddNewTask = () => {
   // handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault(); // prevent page reload
+    setNewtaskId(newId);
 
     if (!taskDescription.trim()) {
       alert("Please fill in the task description.");

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const DisplayTodaysTasks = () => {
+const DisplayTodaysTasks = (newtaskId) => {
   //fetchtodaystasks is into an array
   const [todaysTasksList, setTodaysTasksList] = useState([]);
   useEffect(() => {

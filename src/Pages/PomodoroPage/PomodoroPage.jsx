@@ -1,6 +1,6 @@
 import React from "react";
 import PomodoroSection from "./PomodoroSection";
-import TaskSection from "./TaskSection";
+import TaskSection from "./TaskSection/TaskSection";
 import FinishedTasksSection from "./FinishedTasksSection";
 
 const PomodoroPage = () => {
