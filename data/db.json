@@ -49,8 +49,8 @@
       "pomodorosDone": 0
     },
     {
-      "id": 6,
-      "description": "short forms",
+      "id": "6",
+      "description": "present short forms",
       "pomodoroNumbers": 2,
       "pomodorosDone": 0
     }
@@ -64,6 +64,9 @@
     },
     {
       "id": "5"
+    },
+    {
+      "id": "6"
     }
   ]
 }

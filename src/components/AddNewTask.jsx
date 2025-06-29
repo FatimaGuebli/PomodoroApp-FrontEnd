@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const AddNewTask = (setNewtaskId) => {
+const AddNewTask = ({ setNewtaskId }) => {
   // task description
   const [taskDescription, setTaskDescription] = useState("");
 
@@ -63,7 +63,6 @@ const AddNewTask = (setNewtaskId) => {
   // handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault(); // prevent page reload
-    setNewtaskId(newId);
 
     if (!taskDescription.trim()) {
       alert("Please fill in the task description.");
@@ -74,7 +73,7 @@ const AddNewTask = (setNewtaskId) => {
       tasksList.length > 0 ? Math.max(...tasksList.map((t) => t.id)) + 1 : 1;
 
     const newTask = {
-      id: newId,
+      id: String(newId),
       description: taskDescription,
       pomodoroNumbers: pomodoroNumber,
       pomodorosDone: 0,
@@ -92,6 +91,7 @@ const AddNewTask = (setNewtaskId) => {
     } catch (err) {
       console.log(err.message);
     }
+    setNewtaskId(String(newId));
 
     // if the task is linked to a goal
     if (selectedGoal) {
