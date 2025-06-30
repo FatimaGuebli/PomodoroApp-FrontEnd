@@ -23,7 +23,7 @@ const TaskSection = () => {
     setSelectExistingButtonState(!currentState);
   };
   //array of the existing selected task
-  const [SelectedTask, setSelectedTask] = useState([]);
+  const [SelectedTasks, setSelectedTasks] = useState([]);
   return (
     <section>
       <h2>Today's Tasks</h2>
@@ -34,7 +34,7 @@ const TaskSection = () => {
           add an existing task
         </button>
         {selectExistingButtonState && (
-          <SelectExistingTask setSelectedTask={setSelectedTask} />
+          <SelectExistingTask setSelectedTasks={setSelectedTasks} />
         )}
       </div>
       <div>

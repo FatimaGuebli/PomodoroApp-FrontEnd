@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 
-const SelectExistingTask = ({ setSelectedtask }) => {
+const SelectExistingTask = ({ setSelectedtasks }) => {
+  //selected id
+  const [selectedId, setSelectedId] = useState("");
+
   //fetch tasks
   const [allTasks, setAllTasks] = useState([]);
 
@@ -52,7 +55,7 @@ const SelectExistingTask = ({ setSelectedtask }) => {
 
   const handleSelectChange = async (e) => {
     const taskId = e.target.value;
-    setSelectedtask(taskId);
+    setSelectedId(taskId);
 
     try {
       await fetch("http://localhost:3001/todaystasks", {
@@ -60,10 +63,27 @@ const SelectExistingTask = ({ setSelectedtask }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: String(taskId) }),
       });
-    } catch (error) {}
+
+      //notify parent
+      setSelectedtasks((prev) => [...prev, taskId]);
+    } catch (error) {
+      console.log(`error adding a selected task before submit`);
+    }
   };
 
-  return <select></select>;
+  return (
+    <div>
+      <label>select the Task to add : </label>
+      <select value={selectedId} onChange={handleSelectChange}>
+        <option value="">-- select a task --</option>
+        {nonSelectedTasks.map((task) => (
+          <option key={task.id} value={task.id}>
+            {task.description}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 };
 
 export default SelectExistingTask;
