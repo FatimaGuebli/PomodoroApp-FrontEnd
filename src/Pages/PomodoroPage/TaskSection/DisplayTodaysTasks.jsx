@@ -1,64 +1,51 @@
 import React, { useEffect, useState } from "react";
 
 const DisplayTodaysTasks = ({ newtaskId }) => {
-  //fetchtodaystasks is into an array
   const [todaysTasksList, setTodaysTasksList] = useState([]);
+  const [tasksList, setTasksList] = useState([]);
+
+  // Fetch todaystasks
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("http://localhost:3001/todaystasks");
-        if (!response.ok) {
-          throw Error("data from TodaysTasks is not fetchd properly");
-        }
-
+        if (!response.ok)
+          throw Error("data from TodaysTasks is not fetched properly");
         const todaysTasksArray = await response.json();
         setTodaysTasksList(todaysTasksArray);
-        //console
-        //console.log("fetched : ", todaysTasksArray);
       } catch (err) {
         console.log(err.message);
       }
     };
-
     setTimeout(() => {
-      (async () => await fetchData())();
+      fetchData();
     }, 2000);
   }, []);
 
-  //fetch all tasks & then filter them to have todays tasks
-  const [tasksList, setTasksList] = useState([]);
-
+  // Fetch all tasks
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("http://localhost:3001/tasks");
-        if (!response.ok) {
-          throw Error("data from TodaysTasks is not fetchd properly");
-        }
-
+        if (!response.ok)
+          throw Error("data from Tasks is not fetched properly");
         const tasksArray = await response.json();
-        setTasksList(tasksArray);
-
-        //console
-        //console.log(tasksArray);
-
         setTasksList(tasksArray);
       } catch (err) {
         console.log(err.message);
       }
     };
-
     setTimeout(() => {
-      (async () => await fetchData())();
+      fetchData();
     }, 2000);
-  }, [tasksList]);
+  }, []);
 
-  //filter the tasks to have todaystasks
+  // Filter only today's tasks
   const todaysTasks = tasksList.filter((task) =>
     todaysTasksList.some((t) => t.id === task.id)
   );
 
-  //if a new task was created it will be displayed in today's tasks array
+  // Add newly created task to today's tasks
   useEffect(() => {
     if (!newtaskId) return;
 
@@ -66,7 +53,6 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
       try {
         const response = await fetch("http://localhost:3001/todaystasks");
         const todaysTasks = await response.json();
-
         const alreadyExists = todaysTasks.some((t) => t.id === newtaskId);
         if (!alreadyExists) {
           await fetch("http://localhost:3001/todaystasks", {
@@ -76,10 +62,7 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
           });
         }
       } catch (err) {
-        console.log(
-          "error updating the todays tasks array while adding the new created task, error : ",
-          err.message
-        );
+        console.log("❌ Error updating today's tasks:", err.message);
       }
     };
 
@@ -87,12 +70,26 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
   }, [newtaskId]);
 
   return (
-    <div>
-      <ul>
-        {todaysTasks.map((task) => (
-          <li key={task.id}>{task.description}</li>
-        ))}
-      </ul>
+    <div className="space-y-4">
+      {todaysTasks.length === 0 ? (
+        <p className="text-sm text-gray-400 italic">No tasks for today yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {todaysTasks.map((task) => (
+            <li
+              key={task.id}
+              className="bg-white border border-[#f4e1e6] rounded-lg px-4 py-3 shadow-sm flex items-center justify-between hover:shadow-md transition"
+            >
+              <span className="text-[#4b2e2e] font-medium">
+                {task.description}
+              </span>
+              <span className="text-xs bg-[#b33a3a] text-white px-2 py-0.5 rounded-md">
+                {task.pomodorosDone}/{task.pomodoroNumbers} 🍅
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

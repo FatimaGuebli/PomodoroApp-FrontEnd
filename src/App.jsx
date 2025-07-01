@@ -17,7 +17,7 @@ import Settings from "./Pages/Settings";
 const App = () => {
   return (
     <Router>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen ">
         <Nav /> {/* Sidebar stays fixed */}
         <div className="flex-1 p-6">
           <Routes>

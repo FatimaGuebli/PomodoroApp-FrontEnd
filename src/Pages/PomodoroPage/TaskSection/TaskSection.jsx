@@ -1,44 +1,90 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DisplayTodaysTasks from "./DisplayTodaysTasks";
 import AddNewTask from "../../../components/AddNewTask";
 import SelectExistingTask from "./SelectexistingTask";
 
 const TaskSection = () => {
-  //new task button
-  const [newTaskButtonState, setNewtaskButtonState] = useState(false);
-  const handleClickNewTaskButton = () => {
-    const currenState = newTaskButtonState;
-    setNewtaskButtonState(!currenState);
-  };
+  const [tasks, setTasks] = useState([]);
+  const [todaysTasks, setTodaysTasks] = useState([]);
+  const [goals, setGoals] = useState([]);
 
-  //add the new task to be displayed in todaystasksList
-  const [newtaskId, setNewtaskId] = useState();
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [taskRes, todayRes, goalsRes] = await Promise.all([
+          fetch("http://localhost:3001/tasks"),
+          fetch("http://localhost:3001/todaystasks"),
+          fetch("http://localhost:3001/goals"),
+        ]);
 
-  //select an existing task button
+        const taskData = await taskRes.json();
+        const todaysData = await todayRes.json();
+        const goalsData = await goalsRes.json();
+
+        setTasks(taskData);
+        setTodaysTasks(todaysData);
+        setGoals(goalsData);
+      } catch (err) {
+        console.error("Failed to fetch data:", err.message);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const [newTaskButtonState, setNewTaskButtonState] = useState(false);
   const [selectExistingButtonState, setSelectExistingButtonState] =
     useState(false);
 
-  const handleClickSelectAnExistingTaskButton = () => {
-    const currentState = selectExistingButtonState;
-    setSelectExistingButtonState(!currentState);
-  };
-  //array of the existing selected task
-  const [SelectedTasks, setSelectedTasks] = useState([]);
   return (
-    <section>
-      <h2>Today's Tasks</h2>
-      <div>
-        <button onClick={handleClickNewTaskButton}>new task</button>
-        {newTaskButtonState && <AddNewTask setNewtaskId={setNewtaskId} />}
-        <button onClick={handleClickSelectAnExistingTaskButton}>
-          add an existing task
+    <section className="space-y-6">
+      {/* Header */}
+      <h2 className="text-2xl font-bold text-[#b33a3a] mb-2">Today's Tasks</h2>
+
+      {/* Buttons */}
+      <div className="flex gap-4 flex-wrap mb-4">
+        <button
+          onClick={() => setNewTaskButtonState((prev) => !prev)}
+          className="btn-primary"
+        >
+          New Task
         </button>
+        <button
+          onClick={() => setSelectExistingButtonState((prev) => !prev)}
+          className="btn-primary"
+        >
+          Add Existing Task
+        </button>
+      </div>
+
+      {/* Forms */}
+      <div className="space-y-4">
+        {newTaskButtonState && (
+          <div className="soft-panel">
+            <AddNewTask
+              tasks={tasks}
+              setTasks={setTasks}
+              setTodaysTasks={setTodaysTasks}
+              goals={goals}
+              setGoals={setGoals}
+            />
+          </div>
+        )}
+
         {selectExistingButtonState && (
-          <SelectExistingTask setSelectedTasks={setSelectedTasks} />
+          <div className="soft-panel">
+            <SelectExistingTask
+              tasks={tasks}
+              todaysTasks={todaysTasks}
+              setTodaysTasks={setTodaysTasks}
+            />
+          </div>
         )}
       </div>
-      <div>
-        <DisplayTodaysTasks newtaskId={newtaskId} />
+
+      {/* Display Today's Tasks */}
+      <div className="soft-panel">
+        <DisplayTodaysTasks tasks={tasks} todaysTasks={todaysTasks} />
       </div>
     </section>
   );

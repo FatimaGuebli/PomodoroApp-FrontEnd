@@ -1,56 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-const SelectExistingTask = ({ setSelectedtasks }) => {
-  //selected id
+const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
   const [selectedId, setSelectedId] = useState("");
 
-  //fetch tasks
-  const [allTasks, setAllTasks] = useState([]);
-
-  useEffect(() => {
-    const fetchAllTasks = async () => {
-      try {
-        const response = await fetch("http://localhost:3001/tasks");
-
-        if (!response.ok) {
-          throw Error("an error fetching tasks from SelectExistingTask");
-        }
-
-        const allTasksArray = await response.json();
-        setAllTasks(allTasksArray);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-
-    fetchAllTasks();
-  }, []);
-
-  //fetch today's task array
-  const [todaysTasks, setTodaysTasks] = useState([]);
-
-  useEffect(() => {
-    const fetchTodaystasks = async () => {
-      try {
-        const response = await fetch("http://localhost:3001/todaystasks");
-
-        if (!response.ok) {
-          throw Error("error fetching todays tasks at SelectExistingsTasks");
-        }
-
-        const todaystasksArray = await response.json();
-        setTodaysTasks(todaystasksArray);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-
-    fetchTodaystasks();
-  }, []);
-
-  //filter non selected tasks into an array
-  const nonSelectedTasks = allTasks.filter(
-    (task) => !todaysTasks.some((t) => String(t.id) == String(task.id))
+  const nonSelectedTasks = tasks.filter(
+    (task) => !todaysTasks.some((t) => String(t.id) === String(task.id))
   );
 
   const handleSelectChange = async (e) => {
@@ -64,18 +18,24 @@ const SelectExistingTask = ({ setSelectedtasks }) => {
         body: JSON.stringify({ id: String(taskId) }),
       });
 
-      //notify parent
-      setSelectedtasks((prev) => [...prev, taskId]);
+      setTodaysTasks((prev) => [...prev, { id: String(taskId) }]);
+      setSelectedId("");
     } catch (error) {
-      console.log(`error adding a selected task before submit`);
+      console.log("Error adding selected task:", error.message);
     }
   };
 
   return (
-    <div>
-      <label>select the Task to add : </label>
-      <select value={selectedId} onChange={handleSelectChange}>
-        <option value="">-- select a task --</option>
+    <div className="mb-6 mt-4">
+      <label className="block text-sm font-semibold text-[#4b2e2e] mb-2">
+        📌 Select a task to add:
+      </label>
+      <select
+        value={selectedId}
+        onChange={handleSelectChange}
+        className="w-full bg-white border border-[#f4e1e6] rounded-md px-4 py-2 text-sm text-[#4b2e2e] shadow-sm focus:ring-2 focus:ring-[#b33a3a] focus:outline-none transition"
+      >
+        <option value="">-- Select a task --</option>
         {nonSelectedTasks.map((task) => (
           <option key={task.id} value={task.id}>
             {task.description}
