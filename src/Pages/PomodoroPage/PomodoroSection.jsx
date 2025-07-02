@@ -4,9 +4,9 @@ import "react-circular-progressbar/dist/styles.css";
 
 const PomodoroSection = () => {
   const pomodoroSessionArray = [
-    { sessionName: "focus", seconds: 10 }, // 1500 = 25min
-    { sessionName: "short", seconds: 3 }, // 300 = 5min
-    { sessionName: "long", seconds: 5 }, // 900 = 15min
+    { sessionName: "focus", seconds: 10 }, // 25min = 1500
+    { sessionName: "short", seconds: 3 }, // 5min = 300
+    { sessionName: "long", seconds: 5 }, // 15min = 900
   ];
 
   const [currentSession, setCurrentSession] = useState(pomodoroSessionArray[0]);
@@ -14,7 +14,32 @@ const PomodoroSection = () => {
   const [secondsLeft, setSecondsLeft] = useState(currentSession.seconds);
   const [isRunning, setIsRunning] = useState(false);
   const [shouldTransition, setShouldTransition] = useState(false);
+
   const timerRef = useRef(null);
+  const endAudioRef = useRef(null);
+  const clickSoundRef = useRef(null);
+
+  // Load audio files once
+  useEffect(() => {
+    endAudioRef.current = new Audio("/sounds/notification.mp3");
+    clickSoundRef.current = new Audio("/sounds/button-click.mp3");
+  }, []);
+
+  const playClick = () => {
+    if (clickSoundRef.current) {
+      clickSoundRef.current.currentTime = 0;
+      clickSoundRef.current.play().catch((e) => console.log("Click error:", e));
+    }
+  };
+
+  const playEndSound = () => {
+    if (endAudioRef.current) {
+      endAudioRef.current.currentTime = 0;
+      endAudioRef.current
+        .play()
+        .catch((e) => console.log("End sound error:", e));
+    }
+  };
 
   // Format MM:SS
   const formatTime = (secs) => {
@@ -25,7 +50,7 @@ const PomodoroSection = () => {
       .padStart(2, "0")}`;
   };
 
-  // Countdown
+  // Countdown logic
   useEffect(() => {
     if (!isRunning) return;
 
@@ -43,34 +68,39 @@ const PomodoroSection = () => {
     return () => clearInterval(timerRef.current);
   }, [isRunning]);
 
-  // Session transition
+  // Handle session transitions
   useEffect(() => {
     if (!shouldTransition) return;
+
     setShouldTransition(false);
     setIsRunning(false);
+    playEndSound();
 
     if (currentSession.sessionName === "focus") {
       const newLoop = focusLoop + 1;
       setFocusLoop(newLoop);
       if (newLoop % 4 === 0) {
-        setCurrentSession(pomodoroSessionArray[2]);
+        setCurrentSession(pomodoroSessionArray[2]); // long
         setSecondsLeft(pomodoroSessionArray[2].seconds);
       } else {
-        setCurrentSession(pomodoroSessionArray[1]);
+        setCurrentSession(pomodoroSessionArray[1]); // short
         setSecondsLeft(pomodoroSessionArray[1].seconds);
       }
     } else {
-      setCurrentSession(pomodoroSessionArray[0]);
+      setCurrentSession(pomodoroSessionArray[0]); // focus
       setSecondsLeft(pomodoroSessionArray[0].seconds);
     }
   }, [shouldTransition]);
 
-  useEffect(() => {
-    console.log("🔄 Session:", currentSession.sessionName);
-  }, [currentSession]);
+  const handleStart = () => {
+    playClick();
+    setIsRunning(true);
+  };
 
-  const handleStart = () => setIsRunning(true);
-  const handlePause = () => setIsRunning(false);
+  const handlePause = () => {
+    playClick();
+    setIsRunning(false);
+  };
 
   const handleSkip = () => {
     clearInterval(timerRef.current);
@@ -82,17 +112,14 @@ const PomodoroSection = () => {
 
   return (
     <section className="w-full max-w-2xl mx-auto px-6 pt-0 pb-10 flex flex-col items-center text-center space-y-6">
-      {/* Static task name */}
       <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-2">
         Current Task: Build Pomodoro Timer
       </h1>
 
-      {/* Session label */}
       <h2 className="text-lg font-semibold text-[#b33a3a] tracking-widest uppercase">
         {currentSession.sessionName} session
       </h2>
 
-      {/* Circular Timer */}
       <div className="w-[200px] md:w-[240px] lg:w-[260px]">
         <CircularProgressbar
           value={percentage}
@@ -102,17 +129,15 @@ const PomodoroSection = () => {
             textColor: "#4b2e2e",
             pathColor: "#b33a3a",
             trailColor: "#f8d8d8",
-            textSize: "1.7rem", // previously 1.5rem
+            textSize: "1.7rem",
           })}
         />
       </div>
 
-      {/* Motivational Quote */}
       <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm">
         “Your future is created by what you do today, not tomorrow.”
       </blockquote>
 
-      {/* Main Buttons */}
       <div className="space-x-4">
         {!isRunning && secondsLeft === currentSession.seconds && (
           <button className="btn-primary px-8 py-3" onClick={handleStart}>
@@ -131,7 +156,6 @@ const PomodoroSection = () => {
         )}
       </div>
 
-      {/* Skip + Completed count */}
       <div className="flex flex-col items-center space-y-2">
         <button
           className="text-sm underline text-[#912d2d] hover:text-[#b33a3a] transition-all"
@@ -139,7 +163,6 @@ const PomodoroSection = () => {
         >
           Skip session?
         </button>
-
         <p className="text-[#4b2e2e] font-medium text-sm">
           Focus sessions completed: {focusLoop}
         </p>
