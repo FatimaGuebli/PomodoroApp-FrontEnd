@@ -36,6 +36,22 @@ const TaskSection = () => {
   const [selectExistingButtonState, setSelectExistingButtonState] =
     useState(false);
 
+  const handleSelectExistingButton = () => {
+    setSelectExistingButtonState((prev) => {
+      const newState = !prev;
+      if (newState) setNewTaskButtonState(false);
+      return newState;
+    });
+  };
+
+  const handleNewTaskButton = () => {
+    setNewTaskButtonState((prev) => {
+      const newState = !prev;
+      if (newState) setSelectExistingButtonState(false);
+      return newState;
+    });
+  };
+
   return (
     <section className="space-y-6">
       {/* Header */}
@@ -43,15 +59,12 @@ const TaskSection = () => {
 
       {/* Buttons */}
       <div className="flex gap-4 flex-wrap mb-4">
-        <button
-          onClick={() => setNewTaskButtonState((prev) => !prev)}
-          className="btn-primary"
-        >
+        <button onClick={handleNewTaskButton} className="btn-primary w-50">
           New Task
         </button>
         <button
-          onClick={() => setSelectExistingButtonState((prev) => !prev)}
-          className="btn-primary"
+          onClick={handleSelectExistingButton}
+          className="btn-primary w-60"
         >
           Add Existing Task
         </button>

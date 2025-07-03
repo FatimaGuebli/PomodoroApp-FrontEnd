@@ -15,7 +15,7 @@ body {
   color: white;
   font-weight: 600;
   font-size: 1.25rem; /* fixed text size */
-  width: 160px; /* fixed width */
+  width: 170px; /* fixed width */
   height: 56px; /* fixed height */
   border-radius: 0.75rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);

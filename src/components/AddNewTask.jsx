@@ -152,7 +152,7 @@ const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
         type="submit"
         className="btn-primary w-full mt-4 text-center text-white bg-[#b33a3a] py-2 px-4 rounded-md shadow-md hover:bg-[#912d2d] transition"
       >
-        ➕ Create Task
+        Create Task
       </button>
     </form>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { ClockIcon } from "lucide-react"; // You can swap this icon
 
 const DisplayTodaysTasks = ({ newtaskId }) => {
   const [todaysTasksList, setTodaysTasksList] = useState([]);
@@ -17,9 +18,7 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
         console.log(err.message);
       }
     };
-    setTimeout(() => {
-      fetchData();
-    }, 2000);
+    setTimeout(fetchData, 2000);
   }, []);
 
   // Fetch all tasks
@@ -35,9 +34,7 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
         console.log(err.message);
       }
     };
-    setTimeout(() => {
-      fetchData();
-    }, 2000);
+    setTimeout(fetchData, 2000);
   }, []);
 
   // Filter only today's tasks
@@ -70,22 +67,31 @@ const DisplayTodaysTasks = ({ newtaskId }) => {
   }, [newtaskId]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {todaysTasks.length === 0 ? (
         <p className="text-sm text-gray-400 italic">No tasks for today yet.</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {todaysTasks.map((task) => (
             <li
               key={task.id}
-              className="bg-white border border-[#f4e1e6] rounded-lg px-4 py-3 shadow-sm flex items-center justify-between hover:shadow-md transition"
+              className="bg-white border border-[#f4e1e6] rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-all flex justify-between items-start gap-4"
             >
-              <span className="text-[#4b2e2e] font-medium">
-                {task.description}
-              </span>
-              <span className="text-xs bg-[#b33a3a] text-white px-2 py-0.5 rounded-md">
-                {task.pomodorosDone}/{task.pomodoroNumbers} 🍅
-              </span>
+              <div className="flex items-start gap-4">
+                <ClockIcon className="text-[#b33a3a] w-6 h-6 mt-1" />
+                <div>
+                  <h3 className="text-[#4b2e2e] font-semibold text-lg">
+                    {task.description}
+                  </h3>
+                  <p className="text-sm text-[#7c4a4a] opacity-80 mt-1">
+                    Total Pomodoros: {task.pomodoroNumbers}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center text-sm bg-[#fce8e8] text-[#b33a3a] font-medium px-3 py-1 rounded-lg">
+                {task.pomodorosDone} done
+              </div>
             </li>
           ))}
         </ul>

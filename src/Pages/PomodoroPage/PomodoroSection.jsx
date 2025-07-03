@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import Confetti from "react-confetti";
+import { useWindowSize } from "@react-hook/window-size"; // optional, for responsiveness
 
 const PomodoroSection = () => {
   const pomodoroSessionArray = [
@@ -18,6 +20,10 @@ const PomodoroSection = () => {
   const timerRef = useRef(null);
   const endAudioRef = useRef(null);
   const clickSoundRef = useRef(null);
+
+  //confetti effects
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [width, height] = useWindowSize(); // for responsive full-screen confetti
 
   // Load audio files once
   useEffect(() => {
@@ -58,9 +64,10 @@ const PomodoroSection = () => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          setShouldTransition(true);
+          setTimeout(() => setShouldTransition(true), 0); // fire instantly in next tick
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
@@ -77,6 +84,9 @@ const PomodoroSection = () => {
     playEndSound();
 
     if (currentSession.sessionName === "focus") {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000); // Hide after 3 sec
+
       const newLoop = focusLoop + 1;
       setFocusLoop(newLoop);
       if (newLoop % 4 === 0) {
@@ -111,63 +121,74 @@ const PomodoroSection = () => {
     ((currentSession.seconds - secondsLeft) / currentSession.seconds) * 100;
 
   return (
-    <section className="w-full max-w-2xl mx-auto px-6 pt-0 pb-10 flex flex-col items-center text-center space-y-6">
-      <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-2">
-        Current Task: Build Pomodoro Timer
-      </h1>
-
-      <h2 className="text-lg font-semibold text-[#b33a3a] tracking-widest uppercase">
-        {currentSession.sessionName} session
-      </h2>
-
-      <div className="w-[200px] md:w-[240px] lg:w-[260px]">
-        <CircularProgressbar
-          value={percentage}
-          text={formatTime(secondsLeft)}
-          strokeWidth={10}
-          styles={buildStyles({
-            textColor: "#4b2e2e",
-            pathColor: "#b33a3a",
-            trailColor: "#f8d8d8",
-            textSize: "1.7rem",
-          })}
+    <>
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          numberOfPieces={150}
+          recycle={false}
         />
-      </div>
+      )}
 
-      <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm">
-        “Your future is created by what you do today, not tomorrow.”
-      </blockquote>
+      <section className="w-full max-w-2xl mx-auto px-6 pt-0 pb-10 flex flex-col items-center text-center space-y-6">
+        <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-2">
+          Current Task: Build Pomodoro Timer
+        </h1>
 
-      <div className="space-x-4">
-        {!isRunning && secondsLeft === currentSession.seconds && (
-          <button className="btn-primary px-8 py-3" onClick={handleStart}>
-            Start
-          </button>
-        )}
-        {!isRunning && secondsLeft < currentSession.seconds && (
-          <button className="btn-primary px-8 py-3" onClick={handleStart}>
-            Resume
-          </button>
-        )}
-        {isRunning && (
-          <button className="btn-primary px-8 py-3" onClick={handlePause}>
-            Pause
-          </button>
-        )}
-      </div>
+        <h2 className="text-lg font-semibold text-[#b33a3a] tracking-widest uppercase">
+          {currentSession.sessionName} session
+        </h2>
 
-      <div className="flex flex-col items-center space-y-2">
-        <button
-          className="text-sm underline text-[#912d2d] hover:text-[#b33a3a] transition-all"
-          onClick={handleSkip}
-        >
-          Skip session?
-        </button>
-        <p className="text-[#4b2e2e] font-medium text-sm">
-          Focus sessions completed: {focusLoop}
-        </p>
-      </div>
-    </section>
+        <div className="w-[200px] md:w-[240px] lg:w-[260px]">
+          <CircularProgressbar
+            value={percentage}
+            text={formatTime(secondsLeft)}
+            strokeWidth={10}
+            styles={buildStyles({
+              textColor: "#4b2e2e",
+              pathColor: "#b33a3a",
+              trailColor: "#f8d8d8",
+              textSize: "1.7rem",
+            })}
+          />
+        </div>
+
+        <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm">
+          “Your future is created by what you do today, not tomorrow.”
+        </blockquote>
+
+        <div className="space-x-4">
+          {!isRunning && secondsLeft === currentSession.seconds && (
+            <button className="btn-primary px-8 py-3" onClick={handleStart}>
+              Start
+            </button>
+          )}
+          {!isRunning && secondsLeft < currentSession.seconds && (
+            <button className="btn-primary px-8 py-3" onClick={handleStart}>
+              Resume
+            </button>
+          )}
+          {isRunning && (
+            <button className="btn-primary px-8 py-3" onClick={handlePause}>
+              Pause
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center space-y-2">
+          <button
+            className="text-sm underline text-[#912d2d] hover:text-[#b33a3a] transition-all"
+            onClick={handleSkip}
+          >
+            Skip session?
+          </button>
+          <p className="text-[#4b2e2e] font-medium text-sm">
+            Focus sessions completed: {focusLoop}
+          </p>
+        </div>
+      </section>
+    </>
   );
 };
 
