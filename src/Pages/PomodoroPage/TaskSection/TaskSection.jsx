@@ -1,40 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import DisplayTodaysTasks from "./DisplayTodaysTasks";
 import AddNewTask from "../../../components/AddNewTask";
 import SelectExistingTask from "./SelectexistingTask";
 
-const TaskSection = () => {
-  const [tasks, setTasks] = useState([]);
-  const [todaysTasks, setTodaysTasks] = useState([]);
+const TaskSection = ({
+  tasks,
+  setTasks,
+  todaysTasks,
+  setTodaysTasks,
+  selectedTaskId,
+  setSelectedTaskId,
+}) => {
   const [goals, setGoals] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [taskRes, todayRes, goalsRes] = await Promise.all([
-          fetch("http://localhost:3001/tasks"),
-          fetch("http://localhost:3001/todaystasks"),
-          fetch("http://localhost:3001/goals"),
-        ]);
-
-        const taskData = await taskRes.json();
-        const todaysData = await todayRes.json();
-        const goalsData = await goalsRes.json();
-
-        setTasks(taskData);
-        setTodaysTasks(todaysData);
-        setGoals(goalsData);
-      } catch (err) {
-        console.error("Failed to fetch data:", err.message);
-      }
-    };
-
-    fetchData();
-  }, []);
-
+  // Local UI state for form toggles
   const [newTaskButtonState, setNewTaskButtonState] = useState(false);
   const [selectExistingButtonState, setSelectExistingButtonState] =
     useState(false);
+
+  // Fetch goals only (tasks & today's tasks are handled in PomodoroPage)
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/goals");
+        const data = await res.json();
+        setGoals(data);
+      } catch (err) {
+        console.error("❌ Failed to fetch goals:", err.message);
+      }
+    };
+
+    fetchGoals();
+  }, []);
 
   const handleSelectExistingButton = () => {
     setSelectExistingButtonState((prev) => {
@@ -95,9 +92,14 @@ const TaskSection = () => {
         )}
       </div>
 
-      {/* Display Today's Tasks */}
+      {/* Display Tasks */}
       <div className="soft-panel">
-        <DisplayTodaysTasks tasks={tasks} todaysTasks={todaysTasks} />
+        <DisplayTodaysTasks
+          tasks={tasks}
+          todaysTasks={todaysTasks}
+          selectedId={selectedTaskId}
+          setSelectedId={setSelectedTaskId}
+        />
       </div>
     </section>
   );

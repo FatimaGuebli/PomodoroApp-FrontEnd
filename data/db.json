@@ -3,18 +3,12 @@
     {
       "id": "1",
       "name": "Build Productivity App",
-      "tasks": [
-        1,
-        2
-      ]
+      "tasks": [1, 2]
     },
     {
       "id": "2",
       "name": "Learn Japanese",
-      "tasks": [
-        3,
-        6
-      ]
+      "tasks": [3, 6]
     }
   ],
   "tasks": [

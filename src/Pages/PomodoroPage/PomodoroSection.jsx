@@ -2,14 +2,20 @@ import React, { useEffect, useRef, useState } from "react";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import Confetti from "react-confetti";
-import { useWindowSize } from "@react-hook/window-size"; // optional, for responsiveness
+import { useWindowSize } from "@react-hook/window-size";
 
-const PomodoroSection = () => {
+const PomodoroSection = ({ selectedTask }) => {
   const pomodoroSessionArray = [
-    { sessionName: "focus", seconds: 10 }, // 25min = 1500
-    { sessionName: "short", seconds: 3 }, // 5min = 300
-    { sessionName: "long", seconds: 5 }, // 15min = 900
+    { sessionName: "focus", seconds: 10 },
+    { sessionName: "short", seconds: 3 },
+    { sessionName: "long", seconds: 5 },
   ];
+
+  useEffect(() => {
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.log("💥 Global error caught:", message, error);
+    };
+  }, []);
 
   const [currentSession, setCurrentSession] = useState(pomodoroSessionArray[0]);
   const [focusLoop, setFocusLoop] = useState(0);
@@ -17,46 +23,34 @@ const PomodoroSection = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [shouldTransition, setShouldTransition] = useState(false);
 
+  const [activeTaskSnapshot, setActiveTaskSnapshot] = useState(null);
+
   const timerRef = useRef(null);
   const endAudioRef = useRef(null);
   const clickSoundRef = useRef(null);
 
-  //confetti effects
   const [showConfetti, setShowConfetti] = useState(false);
-  const [width, height] = useWindowSize(); // for responsive full-screen confetti
+  const [width, height] = useWindowSize();
 
-  // Load audio files once
   useEffect(() => {
     endAudioRef.current = new Audio("/sounds/notification.mp3");
     clickSoundRef.current = new Audio("/sounds/button-click.mp3");
   }, []);
 
   const playClick = () => {
-    if (clickSoundRef.current) {
-      clickSoundRef.current.currentTime = 0;
-      clickSoundRef.current.play().catch((e) => console.log("Click error:", e));
-    }
+    clickSoundRef.current?.play().catch(() => {});
   };
 
   const playEndSound = () => {
-    if (endAudioRef.current) {
-      endAudioRef.current.currentTime = 0;
-      endAudioRef.current
-        .play()
-        .catch((e) => console.log("End sound error:", e));
-    }
+    endAudioRef.current?.play().catch(() => {});
   };
 
-  // Format MM:SS
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60);
     const sec = secs % 60;
-    return `${mins.toString().padStart(2, "0")}:${sec
-      .toString()
-      .padStart(2, "0")}`;
+    return `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  // Countdown logic
   useEffect(() => {
     if (!isRunning) return;
 
@@ -64,10 +58,9 @@ const PomodoroSection = () => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          setTimeout(() => setShouldTransition(true), 0); // fire instantly in next tick
+          setTimeout(() => setShouldTransition(true), 0);
           return 0;
         }
-
         return prev - 1;
       });
     }, 1000);
@@ -75,31 +68,71 @@ const PomodoroSection = () => {
     return () => clearInterval(timerRef.current);
   }, [isRunning]);
 
-  // Handle session transitions
+  // 🧠 Snapshot task when focus session starts
+  useEffect(() => {
+    if (
+      currentSession.sessionName === "focus" &&
+      selectedTask &&
+      !activeTaskSnapshot
+    ) {
+      console.log("📸 Snapshotting selected task:", selectedTask.description);
+      setActiveTaskSnapshot(selectedTask);
+    }
+  }, [currentSession, selectedTask, activeTaskSnapshot]);
+
   useEffect(() => {
     if (!shouldTransition) return;
 
-    setShouldTransition(false);
-    setIsRunning(false);
-    playEndSound();
-
-    if (currentSession.sessionName === "focus") {
+    const handleTransition = async () => {
+      setShouldTransition(false);
+      setIsRunning(false);
+      playEndSound();
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000); // Hide after 3 sec
+      setTimeout(() => setShowConfetti(false), 5000);
 
-      const newLoop = focusLoop + 1;
-      setFocusLoop(newLoop);
-      if (newLoop % 4 === 0) {
-        setCurrentSession(pomodoroSessionArray[2]); // long
-        setSecondsLeft(pomodoroSessionArray[2].seconds);
+      console.log("🎯 Transitioning session:", currentSession.sessionName);
+
+      if (currentSession.sessionName === "focus") {
+        const newLoop = focusLoop + 1;
+        setFocusLoop(newLoop);
+
+        if (activeTaskSnapshot) {
+          try {
+            const updatedCount = (activeTaskSnapshot.pomodorosDone || 0) + 1;
+
+            const response = await fetch(
+              `http://localhost:3001/tasks/${activeTaskSnapshot.id}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pomodorosDone: updatedCount }),
+              }
+            );
+
+            if (!response.ok) throw new Error("❌ Failed to update task");
+
+            console.log(
+              `✅ Pomodoro updated for task "${activeTaskSnapshot.description}"`
+            );
+          } catch (err) {
+            console.error("🧨 Update error:", err.message);
+          }
+        }
+
+        const next =
+          newLoop % 4 === 0 ? pomodoroSessionArray[2] : pomodoroSessionArray[1];
+        console.log("➡️ Switching to next session:", next.sessionName);
+        setCurrentSession(next);
+        setSecondsLeft(next.seconds);
       } else {
-        setCurrentSession(pomodoroSessionArray[1]); // short
-        setSecondsLeft(pomodoroSessionArray[1].seconds);
+        const next = pomodoroSessionArray[0];
+        console.log("🌀 Break ended. Switching to focus.");
+        setCurrentSession(next);
+        setSecondsLeft(next.seconds);
       }
-    } else {
-      setCurrentSession(pomodoroSessionArray[0]); // focus
-      setSecondsLeft(pomodoroSessionArray[0].seconds);
-    }
+    };
+
+    handleTransition();
   }, [shouldTransition]);
 
   const handleStart = () => {
@@ -120,6 +153,8 @@ const PomodoroSection = () => {
   const percentage =
     ((currentSession.seconds - secondsLeft) / currentSession.seconds) * 100;
 
+  const taskToShow = activeTaskSnapshot || selectedTask;
+
   return (
     <>
       {showConfetti && (
@@ -132,8 +167,13 @@ const PomodoroSection = () => {
       )}
 
       <section className="w-full max-w-2xl mx-auto px-6 pt-0 pb-10 flex flex-col items-center text-center space-y-6">
-        <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-2">
-          Current Task: Build Pomodoro Timer
+        <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-1">
+          Current Task:{" "}
+          {taskToShow ? (
+            <span>{taskToShow.description}</span>
+          ) : (
+            <span className="italic text-gray-400">No task selected yet</span>
+          )}
         </h1>
 
         <h2 className="text-lg font-semibold text-[#b33a3a] tracking-widest uppercase">
