@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import supabase from "../../../utils/supabase";
 
 const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
   const [selectedId, setSelectedId] = useState("");
@@ -12,16 +13,19 @@ const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
     setSelectedId(taskId);
 
     try {
-      await fetch("http://localhost:3001/todaystasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: String(taskId) }),
-      });
+      // ✅ Update the task in Supabase to mark it as today's task
+      const { error } = await supabase
+        .from("tasks")
+        .update({ isToday: true })
+        .eq("id", taskId);
 
-      setTodaysTasks((prev) => [...prev, { id: String(taskId) }]);
+      if (error) throw error;
+
+      // ✅ Update local state
+      setTodaysTasks((prev) => [...prev, { id: taskId }]);
       setSelectedId("");
     } catch (error) {
-      console.log("Error adding selected task:", error.message);
+      console.log("❌ Error adding selected task:", error.message);
     }
   };
 

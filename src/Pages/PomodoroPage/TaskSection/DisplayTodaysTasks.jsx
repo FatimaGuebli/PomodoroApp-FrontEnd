@@ -16,6 +16,7 @@ import {
   sortableKeyboardCoordinates as coordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import supabase from "../../../utils/supabase";
 
 // Task Card Component
 const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
@@ -56,10 +57,11 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
         <ClockIcon className="text-[#b33a3a] w-6 h-6 mt-1" />
         <div>
           <h3 className="text-[#4b2e2e] font-semibold text-lg">
-            {task.description}
+            {task.description || "❌ No description"}
           </h3>
           <p className="text-sm text-[#7c4a4a] opacity-80 mt-1">
-            Total Pomodoros: {task.pomodoroNumbers}
+            Pomodoros: {task.pomodorosDone ?? "?"} /{" "}
+            {task.pomodorosNumber ?? "?"}
           </p>
         </div>
       </div>
@@ -83,37 +85,28 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
 
 // Main List Component
 const DisplayTodaysTasks = ({ newtaskId, selectedId, setSelectedId }) => {
-  const [todaysTasksList, setTodaysTasksList] = useState([]);
   const [tasksList, setTasksList] = useState([]);
   const [orderedTaskIds, setOrderedTaskIds] = useState([]);
 
-  // Fetch today's task IDs
-  useEffect(() => {
-    const fetchToday = async () => {
-      try {
-        const res = await fetch("http://localhost:3001/todaystasks");
-        const data = await res.json();
-        setTodaysTasksList(data);
-        setOrderedTaskIds(data.map((t) => t.id));
-      } catch (err) {
-        console.error("❌ Failed to fetch todaystasks:", err.message);
-      }
-    };
-    setTimeout(fetchToday, 2000);
-  }, []);
-
-  // Fetch all tasks
+  // Fetch all tasks marked as isToday
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await fetch("http://localhost:3001/tasks");
-        const data = await res.json();
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("isToday", true);
+
+        if (error) throw error;
+
         setTasksList(data);
+        setOrderedTaskIds(data.map((task) => task.id));
       } catch (err) {
-        console.error("❌ Failed to fetch tasks:", err.message);
+        console.error("❌ Failed to fetch today's tasks:", err.message);
       }
     };
-    setTimeout(fetchTasks, 2000);
+
+    fetchTasks();
   }, []);
 
   // Add new task if needed
@@ -122,20 +115,26 @@ const DisplayTodaysTasks = ({ newtaskId, selectedId, setSelectedId }) => {
 
     const addToToday = async () => {
       try {
-        const res = await fetch("http://localhost:3001/todaystasks");
-        const data = await res.json();
-        const already = data.some((t) => t.id === newtaskId);
-        if (!already) {
-          await fetch("http://localhost:3001/todaystasks", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: newtaskId }),
-          });
-          setTodaysTasksList((prev) => [...prev, { id: newtaskId }]);
+        const { data: existingTask, error: getError } = await supabase
+          .from("tasks")
+          .select("isToday")
+          .eq("id", newtaskId)
+          .single();
+
+        if (getError) throw getError;
+
+        if (!existingTask?.isToday) {
+          const { error: updateError } = await supabase
+            .from("tasks")
+            .update({ isToday: true })
+            .eq("id", newtaskId);
+
+          if (updateError) throw updateError;
+
           setOrderedTaskIds((prev) => [...prev, newtaskId]);
         }
       } catch (err) {
-        console.error("❌ Failed to add task:", err.message);
+        console.error("❌ Failed to update task to today:", err.message);
       }
     };
 

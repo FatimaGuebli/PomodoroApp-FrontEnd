@@ -1,34 +1,51 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PomodoroSection from "./PomodoroSection";
 import TaskSection from "./TaskSection/TaskSection";
 import FinishedTasksSection from "./FinishedTasksSection";
+import supabase from "../../utils/supabase";
 
 const PomodoroPage = () => {
   const [tasks, setTasks] = useState([]);
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState("");
 
-  // Fetch tasks and today's tasks once
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [taskRes, todayRes] = await Promise.all([
-          fetch("http://localhost:3001/tasks"),
-          fetch("http://localhost:3001/todaystasks"),
-        ]);
+  // 🧠 Only fetch once
+  const [hasFetched, setHasFetched] = useState(false);
+  if (!hasFetched) {
+    fetchTasks(); // manually call
+    setHasFetched(true);
+  }
 
-        const taskData = await taskRes.json();
-        const todaysData = await todayRes.json();
+  async function fetchTasks() {
+    try {
+      const { data: allTasks, error } = await supabase
+        .from("tasks")
+        .select("*");
 
-        setTasks(taskData);
-        setTodaysTasks(todaysData);
-      } catch (err) {
-        console.error("❌ Error fetching data:", err.message);
+      if (error) {
+        console.error("❌ Supabase error:", error.message);
+        return;
       }
-    };
 
-    fetchData();
-  }, []);
+      console.log("✅ Fetched all tasks:", allTasks);
+
+      const todayFiltered = (allTasks || []).filter((task) => task.isToday);
+      console.log("🌞 Today's tasks (isToday === true):", todayFiltered);
+
+      if (allTasks?.length === 0) {
+        console.warn("⚠️ No tasks found in the 'tasks' table.");
+      }
+
+      if (todayFiltered.length === 0) {
+        console.warn("⚠️ No tasks are marked as 'isToday' == true.");
+      }
+
+      setTasks(allTasks || []);
+      setTodaysTasks(todayFiltered);
+    } catch (err) {
+      console.error("❌ Unexpected fetch error:", err.message);
+    }
+  }
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId);
 

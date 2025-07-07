@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DisplayTodaysTasks from "./DisplayTodaysTasks";
 import AddNewTask from "../../../components/AddNewTask";
 import SelectExistingTask from "./SelectexistingTask";
+import supabase from "../../../utils/supabase";
 
 const TaskSection = ({
   tasks,
@@ -12,18 +13,15 @@ const TaskSection = ({
   setSelectedTaskId,
 }) => {
   const [goals, setGoals] = useState([]);
-
-  // Local UI state for form toggles
   const [newTaskButtonState, setNewTaskButtonState] = useState(false);
   const [selectExistingButtonState, setSelectExistingButtonState] =
     useState(false);
 
-  // Fetch goals only (tasks & today's tasks are handled in PomodoroPage)
   useEffect(() => {
     const fetchGoals = async () => {
       try {
-        const res = await fetch("http://localhost:3001/goals");
-        const data = await res.json();
+        const { data, error } = await supabase.from("goals").select("*");
+        if (error) throw error;
         setGoals(data);
       } catch (err) {
         console.error("❌ Failed to fetch goals:", err.message);
@@ -35,26 +33,22 @@ const TaskSection = ({
 
   const handleSelectExistingButton = () => {
     setSelectExistingButtonState((prev) => {
-      const newState = !prev;
-      if (newState) setNewTaskButtonState(false);
-      return newState;
+      if (!prev) setNewTaskButtonState(false);
+      return !prev;
     });
   };
 
   const handleNewTaskButton = () => {
     setNewTaskButtonState((prev) => {
-      const newState = !prev;
-      if (newState) setSelectExistingButtonState(false);
-      return newState;
+      if (!prev) setSelectExistingButtonState(false);
+      return !prev;
     });
   };
 
   return (
     <section className="space-y-6">
-      {/* Header */}
       <h2 className="text-2xl font-bold text-[#b33a3a] mb-2">Today's Tasks</h2>
 
-      {/* Buttons */}
       <div className="flex gap-4 flex-wrap mb-4">
         <button onClick={handleNewTaskButton} className="btn-primary w-50">
           New Task
@@ -67,7 +61,6 @@ const TaskSection = ({
         </button>
       </div>
 
-      {/* Forms */}
       <div className="space-y-4">
         {newTaskButtonState && (
           <div className="soft-panel">
@@ -80,7 +73,6 @@ const TaskSection = ({
             />
           </div>
         )}
-
         {selectExistingButtonState && (
           <div className="soft-panel">
             <SelectExistingTask
@@ -92,7 +84,6 @@ const TaskSection = ({
         )}
       </div>
 
-      {/* Display Tasks */}
       <div className="soft-panel">
         <DisplayTodaysTasks
           tasks={tasks}
