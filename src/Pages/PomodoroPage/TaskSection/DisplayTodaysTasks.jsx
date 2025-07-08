@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ClockIcon, GripVertical } from "lucide-react";
 import {
   DndContext,
@@ -9,16 +9,14 @@ import {
   KeyboardSensor,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
   sortableKeyboardCoordinates as coordinates,
+  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import supabase from "../../../utils/supabase";
 
-// Task Card Component
 const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
   const {
     setNodeRef,
@@ -28,13 +26,6 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
     transition,
     isDragging,
   } = useSortable({ id: task.id });
-
-  const isSelected = selectedId === task.id;
-
-  const handleClick = () => {
-    setSelectedId(task.id);
-    console.log("✅ Selected Task ID:", task.id);
-  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -47,21 +38,20 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
       ref={setNodeRef}
       style={style}
       className={`bg-white border ${
-        isSelected
+        selectedId === task.id
           ? "border-[#b33a3a] ring-2 ring-[#fcb6c6]"
           : "border-[#f4e1e6]"
       } rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-all flex justify-between items-start gap-4`}
-      onClick={handleClick}
+      onClick={() => setSelectedId(task.id)}
     >
       <div className="flex items-start gap-4 cursor-pointer">
         <ClockIcon className="text-[#b33a3a] w-6 h-6 mt-1" />
         <div>
           <h3 className="text-[#4b2e2e] font-semibold text-lg">
-            {task.description || "❌ No description"}
+            {task.description}
           </h3>
           <p className="text-sm text-[#7c4a4a] opacity-80 mt-1">
-            Pomodoros: {task.pomodorosDone ?? "?"} /{" "}
-            {task.pomodorosNumber ?? "?"}
+            Pomodoros: {task.pomodorosDone} / {task.pomodorosNumber}
           </p>
         </div>
       </div>
@@ -73,7 +63,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
         <button
           {...attributes}
           {...listeners}
-          onClick={(e) => e.stopPropagation()} // prevent from selecting on drag handle click
+          onClick={(e) => e.stopPropagation()}
           className="p-2 cursor-grab active:cursor-grabbing text-[#b33a3a]"
         >
           <GripVertical />
@@ -83,68 +73,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
   );
 };
 
-// Main List Component
-const DisplayTodaysTasks = ({ newtaskId, selectedId, setSelectedId }) => {
-  const [tasksList, setTasksList] = useState([]);
-  const [orderedTaskIds, setOrderedTaskIds] = useState([]);
-
-  // Fetch all tasks marked as isToday
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .eq("isToday", true);
-
-        if (error) throw error;
-
-        setTasksList(data);
-        setOrderedTaskIds(data.map((task) => task.id));
-      } catch (err) {
-        console.error("❌ Failed to fetch today's tasks:", err.message);
-      }
-    };
-
-    fetchTasks();
-  }, []);
-
-  // Add new task if needed
-  useEffect(() => {
-    if (!newtaskId) return;
-
-    const addToToday = async () => {
-      try {
-        const { data: existingTask, error: getError } = await supabase
-          .from("tasks")
-          .select("isToday")
-          .eq("id", newtaskId)
-          .single();
-
-        if (getError) throw getError;
-
-        if (!existingTask?.isToday) {
-          const { error: updateError } = await supabase
-            .from("tasks")
-            .update({ isToday: true })
-            .eq("id", newtaskId);
-
-          if (updateError) throw updateError;
-
-          setOrderedTaskIds((prev) => [...prev, newtaskId]);
-        }
-      } catch (err) {
-        console.error("❌ Failed to update task to today:", err.message);
-      }
-    };
-
-    addToToday();
-  }, [newtaskId]);
-
-  const todaysTasks = orderedTaskIds
-    .map((id) => tasksList.find((task) => task.id === id))
-    .filter(Boolean);
-
+const DisplayTodaysTasks = ({ todaysTasks, selectedId, setSelectedId }) => {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -156,9 +85,12 @@ const DisplayTodaysTasks = ({ newtaskId, selectedId, setSelectedId }) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = orderedTaskIds.indexOf(active.id);
-    const newIndex = orderedTaskIds.indexOf(over.id);
-    setOrderedTaskIds((ids) => arrayMove(ids, oldIndex, newIndex));
+    const oldIndex = todaysTasks.findIndex((t) => t.id === active.id);
+    const newIndex = todaysTasks.findIndex((t) => t.id === over.id);
+
+    const newOrder = arrayMove(todaysTasks, oldIndex, newIndex);
+    console.log("🔃 New order (not persisted):", newOrder);
+    // Optional: Update order in Supabase if needed
   };
 
   return (
@@ -172,7 +104,7 @@ const DisplayTodaysTasks = ({ newtaskId, selectedId, setSelectedId }) => {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={orderedTaskIds}
+            items={todaysTasks.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
             <ul className="space-y-4">

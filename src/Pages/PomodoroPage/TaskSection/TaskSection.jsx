@@ -16,6 +16,8 @@ const TaskSection = ({
   const [newTaskButtonState, setNewTaskButtonState] = useState(false);
   const [selectExistingButtonState, setSelectExistingButtonState] =
     useState(false);
+  const [refreshTodayTasks, setRefreshTodayTasks] = useState(false);
+  const [newlyCreatedTaskId, setNewlyCreatedTaskId] = useState(null); // ✨
 
   useEffect(() => {
     const fetchGoals = async () => {
@@ -27,7 +29,6 @@ const TaskSection = ({
         console.error("❌ Failed to fetch goals:", err.message);
       }
     };
-
     fetchGoals();
   }, []);
 
@@ -70,6 +71,8 @@ const TaskSection = ({
               setTodaysTasks={setTodaysTasks}
               goals={goals}
               setGoals={setGoals}
+              setRefreshTodayTasks={setRefreshTodayTasks}
+              setNewlyCreatedTaskId={setNewlyCreatedTaskId} // ✨
             />
           </div>
         )}
@@ -79,6 +82,8 @@ const TaskSection = ({
               tasks={tasks}
               todaysTasks={todaysTasks}
               setTodaysTasks={setTodaysTasks}
+              setRefreshTodayTasks={setRefreshTodayTasks}
+              setNewlyCreatedTaskId={setNewlyCreatedTaskId} // ✨ Add this line
             />
           </div>
         )}
@@ -90,6 +95,8 @@ const TaskSection = ({
           todaysTasks={todaysTasks}
           selectedId={selectedTaskId}
           setSelectedId={setSelectedTaskId}
+          refreshTodayTasks={refreshTodayTasks}
+          newlyCreatedTaskId={newlyCreatedTaskId} // ✨
         />
       </div>
     </section>

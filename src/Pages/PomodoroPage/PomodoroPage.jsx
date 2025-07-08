@@ -9,10 +9,9 @@ const PomodoroPage = () => {
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState("");
 
-  // 🧠 Only fetch once
   const [hasFetched, setHasFetched] = useState(false);
   if (!hasFetched) {
-    fetchTasks(); // manually call
+    fetchTasks();
     setHasFetched(true);
   }
 
@@ -27,18 +26,7 @@ const PomodoroPage = () => {
         return;
       }
 
-      console.log("✅ Fetched all tasks:", allTasks);
-
       const todayFiltered = (allTasks || []).filter((task) => task.isToday);
-      console.log("🌞 Today's tasks (isToday === true):", todayFiltered);
-
-      if (allTasks?.length === 0) {
-        console.warn("⚠️ No tasks found in the 'tasks' table.");
-      }
-
-      if (todayFiltered.length === 0) {
-        console.warn("⚠️ No tasks are marked as 'isToday' == true.");
-      }
 
       setTasks(allTasks || []);
       setTodaysTasks(todayFiltered);
@@ -50,18 +38,8 @@ const PomodoroPage = () => {
   const selectedTask = tasks.find((task) => task.id === selectedTaskId);
 
   return (
-    <main
-      className="
-        flex flex-col items-center 
-        space-y-10 md:space-y-6 lg:space-y-4 
-        min-h-screen 
-        px-4 py-10 
-        md:py-0 lg:py-0 
-        bg-[#fef9f4]
-      "
-    >
-      {/* 🍓 Pomodoro Section */}
-      <section className="w-full max-w-2xl bg-[#fcebea] rounded-3xl shadow-lg border border-[#f8d8d8] p-6 md:p-8">
+    <main className="flex flex-col items-center space-y-10 min-h-screen px-4 py-10 bg-[#fef9f4]">
+      <section className="w-full max-w-2xl bg-[#fcebea] rounded-3xl shadow-lg border border-[#f8d8d8] p-6">
         <PomodoroSection
           selectedTask={selectedTask}
           tasks={tasks}
@@ -69,7 +47,6 @@ const PomodoroPage = () => {
         />
       </section>
 
-      {/* 📋 Task Section */}
       <section className="w-full max-w-4xl bg-white shadow-md rounded-xl p-6 border border-[#f3d3da]">
         <TaskSection
           tasks={tasks}
@@ -81,7 +58,6 @@ const PomodoroPage = () => {
         />
       </section>
 
-      {/* ✅ Finished Tasks */}
       <section className="w-full max-w-4xl bg-[#fbe4e5] shadow-inner rounded-xl p-6 border border-[#f3cdd5]">
         <FinishedTasksSection />
       </section>

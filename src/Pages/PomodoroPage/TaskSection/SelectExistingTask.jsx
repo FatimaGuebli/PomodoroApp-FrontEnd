@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import supabase from "../../../utils/supabase";
 
-const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
+const SelectExistingTask = ({
+  tasks,
+  todaysTasks,
+  setTodaysTasks,
+  setNewlyCreatedTaskId, // ✨ highlight trigger
+}) => {
   const [selectedId, setSelectedId] = useState("");
 
   const nonSelectedTasks = tasks.filter(
@@ -13,7 +18,6 @@ const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
     setSelectedId(taskId);
 
     try {
-      // ✅ Update the task in Supabase to mark it as today's task
       const { error } = await supabase
         .from("tasks")
         .update({ isToday: true })
@@ -21,8 +25,12 @@ const SelectExistingTask = ({ tasks, todaysTasks, setTodaysTasks }) => {
 
       if (error) throw error;
 
-      // ✅ Update local state
-      setTodaysTasks((prev) => [...prev, { id: taskId }]);
+      const fullTask = tasks.find((task) => String(task.id) === String(taskId));
+      if (fullTask) {
+        setTodaysTasks((prev) => [...prev, { ...fullTask, isToday: true }]);
+        setNewlyCreatedTaskId(fullTask.id); // ✨ Highlight it!
+      }
+
       setSelectedId("");
     } catch (error) {
       console.log("❌ Error adding selected task:", error.message);

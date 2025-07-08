@@ -1,96 +1,72 @@
 import React, { useState } from "react";
+import supabase from "../utils/supabase";
 
-const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
+const AddNewTask = ({
+  tasks,
+  setTasks,
+  setTodaysTasks,
+  goals,
+  setGoals,
+  setNewlyCreatedTaskId, // ✨
+}) => {
   const [taskDescription, setTaskDescription] = useState("");
   const [pomodoroNumber, setPomodoroNumber] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleIncreaseButton = () => {
-    setPomodoroNumber((prev) => prev + 1);
-  };
-
-  const handleDecreaseButton = () => {
+  const handleIncrease = () => setPomodoroNumber((prev) => prev + 1);
+  const handleDecrease = () =>
     setPomodoroNumber((prev) => (prev > 1 ? prev - 1 : prev));
-  };
-
-  const handleSelectGoal = (e) => {
-    setSelectedGoal(e.target.value);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!taskDescription.trim()) {
-      alert("Please fill in the task description.");
+      alert("Please enter a task description.");
       return;
     }
 
-    const newId =
-      tasks.length > 0 ? Math.max(...tasks.map((t) => Number(t.id))) + 1 : 1;
+    setIsSubmitting(true);
 
-    const newTask = {
-      id: String(newId),
+    const payload = {
       description: taskDescription,
-      pomodoroNumbers: pomodoroNumber,
+      pomodorosNumber: pomodoroNumber,
       pomodorosDone: 0,
+      isToday: true,
+      isFinished: false,
+      goal_id: selectedGoal || null,
     };
 
     try {
-      const response = await fetch("http://localhost:3001/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTask),
-      });
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert([payload])
+        .select()
+        .single();
 
-      if (!response.ok) throw Error("Failed to add task");
+      if (error) {
+        alert("Insert failed: " + error.message);
+        return;
+      }
 
-      setTasks((prev) => [...prev, newTask]);
-
-      await fetch("http://localhost:3001/todaystasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: String(newId) }),
-      });
-
-      setTodaysTasks((prev) => [{ id: String(newId) }, ...prev]);
+      setTasks((prev) => [...prev, data]);
+      setTodaysTasks((prev) => [...prev, data]);
+      setNewlyCreatedTaskId(data.id); // ✨ Highlight effect trigger!
 
       setTaskDescription("");
       setPomodoroNumber(1);
       setSelectedGoal("");
-
-      alert("Task added successfully!");
     } catch (err) {
-      console.log(err.message);
-    }
-
-    if (selectedGoal) {
-      try {
-        const goal = goals.find((g) => g.id === selectedGoal);
-
-        const updatedGoal = {
-          ...goal,
-          tasks: [...(goal.tasks || []), newId],
-        };
-
-        const response = await fetch(`http://localhost:3001/goals/${goal.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedGoal),
-        });
-
-        if (!response.ok) {
-          throw Error("Failed to update goal");
-        }
-      } catch (err) {
-        console.log(err.message);
-      }
+      alert("Unexpected error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-6 bg-[#fff4f4] p-6 rounded-xl shadow-md border border-[#f4e1e6] space-y-5"
+      className="bg-[#fff4f4] p-6 rounded-xl shadow-md border border-[#f4e1e6] space-y-5"
     >
       <div>
         <label className="block text-[#4b2e2e] font-medium mb-1">
@@ -112,7 +88,7 @@ const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
         <div className="flex items-center space-x-4">
           <button
             type="button"
-            onClick={handleDecreaseButton}
+            onClick={handleDecrease}
             className="bg-[#f4e1e6] text-[#b33a3a] px-3 py-1 rounded-md font-bold hover:bg-[#f2cfd7]"
           >
             -
@@ -122,7 +98,7 @@ const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
           </span>
           <button
             type="button"
-            onClick={handleIncreaseButton}
+            onClick={handleIncrease}
             className="bg-[#f4e1e6] text-[#b33a3a] px-3 py-1 rounded-md font-bold hover:bg-[#f2cfd7]"
           >
             +
@@ -136,7 +112,7 @@ const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
         </label>
         <select
           value={selectedGoal}
-          onChange={handleSelectGoal}
+          onChange={(e) => setSelectedGoal(e.target.value)}
           className="w-full px-4 py-2 border border-[#f4e1e6] rounded-md text-[#4b2e2e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b33a3a]"
         >
           <option value="">No goal selected</option>
@@ -150,9 +126,14 @@ const AddNewTask = ({ tasks, setTasks, setTodaysTasks, goals, setGoals }) => {
 
       <button
         type="submit"
-        className="btn-primary w-full mt-4 text-center text-white bg-[#b33a3a] py-2 px-4 rounded-md shadow-md hover:bg-[#912d2d] transition"
+        disabled={isSubmitting}
+        className={`w-full mt-4 py-2 px-4 rounded-md shadow-md transition text-white ${
+          isSubmitting
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#b33a3a] hover:bg-[#912d2d]"
+        }`}
       >
-        Create Task
+        {isSubmitting ? "Creating..." : "Create Task"}
       </button>
     </form>
   );
