@@ -91,12 +91,10 @@ const TaskSection = ({
 
       <div className="soft-panel">
         <DisplayTodaysTasks
-          tasks={tasks}
           todaysTasks={todaysTasks}
+          setTodaysTasks={setTodaysTasks}
           selectedId={selectedTaskId}
           setSelectedId={setSelectedTaskId}
-          refreshTodayTasks={refreshTodayTasks}
-          newlyCreatedTaskId={newlyCreatedTaskId} // ✨
         />
       </div>
     </section>

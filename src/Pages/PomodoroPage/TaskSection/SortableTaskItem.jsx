@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { GripVertical, Pencil } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useUpdateTask, useDeleteTask } from "../../../hooks/useTaskMutations";
 
 const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -11,6 +12,9 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
     pomodorosNumber: task.pomodorosNumber,
     goal_id: task.goal_id || "",
   });
+
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
   const {
     setNodeRef,
@@ -31,17 +35,36 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name.includes("pomodoros") ? parseInt(value) : value,
+      [name]: name.includes("pomodoros") ? parseInt(value) || 0 : value,
     }));
   };
 
-  const handleSave = () => {
-    alert("Saving not implemented yet");
-    setIsEditing(false);
-  };
+  const handleSave = async () => {
+    const done = Number(formData.pomodorosDone);
+    const total = Number(formData.pomodorosNumber);
 
-  const handleDelete = () => {
-    alert("Delete not implemented yet");
+    if (isNaN(done) || isNaN(total)) {
+      alert("❌ Pomodoro values must be valid numbers.");
+      return;
+    }
+
+    if (done > total) {
+      alert("❌ Pomodoros done cannot be greater than total.");
+      return;
+    }
+
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        description: formData.description,
+        pomodorosDone: done,
+        pomodorosNumber: total,
+        goal_id: formData.goal_id || null,
+      });
+      setIsEditing(false);
+    } catch (err) {
+      alert("❌ Failed to update: " + err.message);
+    }
   };
 
   const handleDiscard = () => {
@@ -54,6 +77,19 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
     });
   };
 
+  const handleDelete = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+    if (!confirm) return;
+
+    try {
+      await deleteTaskMutation.mutateAsync(task.id);
+    } catch (err) {
+      alert("❌ Failed to delete: " + err.message);
+    }
+  };
+
   return (
     <li
       ref={setNodeRef}
@@ -62,7 +98,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
         selectedId === task.id
           ? "border-[#b33a3a] ring-2 ring-[#fcb6c6]"
           : "border-[#f4e1e6]"
-      } rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-all flex gap-4`}
+      } rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-all flex gap-4 items-start`}
       onClick={() => setSelectedId(task.id)}
     >
       {/* Drag Handle */}
@@ -76,9 +112,9 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
       </button>
 
       {/* Task Content */}
-      <div className="flex-1 cursor-default">
+      <div className="flex-1 cursor-default space-y-3">
         {isEditing ? (
-          <div className="space-y-3">
+          <>
             <div className="space-y-1">
               <label className="text-sm text-[#4b2e2e] font-semibold">
                 Description
@@ -100,6 +136,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
                   name="pomodorosDone"
                   type="number"
                   min={0}
+                  max={formData.pomodorosNumber}
                   value={formData.pomodorosDone}
                   onChange={handleChange}
                   className="w-full border px-4 py-2 rounded-md text-sm"
@@ -135,27 +172,24 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
               </select>
             </div>
 
-            {/* Buttons under form */}
+            {/* Buttons */}
             <div className="flex justify-between pt-2">
-              {/* Delete on the left */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className="text-sm text-[#b33a3a] px-4 py-1.5 rounded-xl bg-white hover:bg-[#ffe5e5] transition shadow-sm"
+                className="text-red-600 text-sm font-medium hover:underline"
               >
                 Delete
               </button>
-
-              {/* Save + Discard on the right */}
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDiscard();
                   }}
-                  className="text-sm text-[#7c4a4a] px-4 py-1.5 rounded-xl bg-white hover:bg-[#f4e1e6] transition shadow-sm"
+                  className="text-gray-600 text-sm font-medium hover:underline"
                 >
                   Discard
                 </button>
@@ -164,13 +198,13 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
                     e.stopPropagation();
                     handleSave();
                   }}
-                  className="text-sm text-[#b33a3a] font-medium px-4 py-1.5 rounded-xl bg-white hover:bg-[#fcebea] transition shadow-sm"
+                  className="text-[#b33a3a] text-sm font-semibold hover:underline"
                 >
                   Save
                 </button>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <div
             onClick={() => setSelectedId(task.id)}
@@ -186,7 +220,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
         )}
       </div>
 
-      {/* Edit Button (when not editing) */}
+      {/* Edit Button */}
       {!isEditing && (
         <div className="flex items-start mt-1">
           <button

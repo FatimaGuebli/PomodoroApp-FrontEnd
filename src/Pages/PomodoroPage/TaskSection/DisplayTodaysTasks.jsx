@@ -15,8 +15,14 @@ import {
 } from "@dnd-kit/sortable";
 
 import SortableTaskItem from "./SortableTaskItem";
+import supabase from "../../../utils/supabase"; // ✅ import supabase
 
-const DisplayTodaysTasks = ({ todaysTasks, selectedId, setSelectedId }) => {
+const DisplayTodaysTasks = ({
+  todaysTasks,
+  setTodaysTasks,
+  selectedId,
+  setSelectedId,
+}) => {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -24,7 +30,7 @@ const DisplayTodaysTasks = ({ todaysTasks, selectedId, setSelectedId }) => {
     })
   );
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -32,8 +38,27 @@ const DisplayTodaysTasks = ({ todaysTasks, selectedId, setSelectedId }) => {
     const newIndex = todaysTasks.findIndex((t) => t.id === over.id);
 
     const newOrder = arrayMove(todaysTasks, oldIndex, newIndex);
-    console.log("🔃 New order (not persisted):", newOrder);
-    // Optional: persist to Supabase
+    setTodaysTasks(newOrder);
+    console.log(
+      "🔃 New order (persisting to Supabase):",
+      newOrder.map((t) => t.description)
+    );
+
+    // ✅ Update Supabase 'order' fields
+    const updates = newOrder.map((task, index) => ({
+      id: task.id,
+      order: index,
+    }));
+
+    const { error } = await supabase.from("tasks").upsert(updates, {
+      onConflict: "id",
+    });
+
+    if (error) {
+      console.error("❌ Failed to update order in Supabase:", error.message);
+    } else {
+      console.log("✅ Order persisted to Supabase");
+    }
   };
 
   return (

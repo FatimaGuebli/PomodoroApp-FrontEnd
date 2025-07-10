@@ -7,7 +7,7 @@ const AddNewTask = ({
   setTodaysTasks,
   goals,
   setGoals,
-  setNewlyCreatedTaskId, // ✨
+  setNewlyCreatedTaskId,
 }) => {
   const [taskDescription, setTaskDescription] = useState("");
   const [pomodoroNumber, setPomodoroNumber] = useState(1);
@@ -28,16 +28,26 @@ const AddNewTask = ({
 
     setIsSubmitting(true);
 
-    const payload = {
-      description: taskDescription,
-      pomodorosNumber: pomodoroNumber,
-      pomodorosDone: 0,
-      isToday: true,
-      isFinished: false,
-      goal_id: selectedGoal || null,
-    };
-
     try {
+      // 🧠 Step 1: Shift all current today's tasks (order++) to make space
+      const { error: reorderError } = await supabase
+        .from("tasks")
+        .update({ order: supabase.raw("order + 1") })
+        .eq("isToday", true);
+
+      if (reorderError) throw reorderError;
+
+      // 🧠 Step 2: Create new task with order = 0
+      const payload = {
+        description: taskDescription,
+        pomodorosNumber: pomodoroNumber,
+        pomodorosDone: 0,
+        isToday: true,
+        isFinished: false,
+        goal_id: selectedGoal || null,
+        order: 0,
+      };
+
       const { data, error } = await supabase
         .from("tasks")
         .insert([payload])
@@ -49,10 +59,12 @@ const AddNewTask = ({
         return;
       }
 
-      setTasks((prev) => [...prev, data]);
-      setTodaysTasks((prev) => [...prev, data]);
-      setNewlyCreatedTaskId(data.id); // ✨ Highlight effect trigger!
+      // 🧠 Step 3: Update UI state
+      setTasks((prev) => [data, ...prev]);
+      setTodaysTasks((prev) => [data, ...prev]);
+      setNewlyCreatedTaskId(data.id); // ✨ Highlight trigger
 
+      // 🧹 Reset inputs
       setTaskDescription("");
       setPomodoroNumber(1);
       setSelectedGoal("");

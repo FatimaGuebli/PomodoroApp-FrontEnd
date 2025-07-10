@@ -5,7 +5,7 @@ const SelectExistingTask = ({
   tasks,
   todaysTasks,
   setTodaysTasks,
-  setNewlyCreatedTaskId, // ✨ highlight trigger
+  setNewlyCreatedTaskId,
 }) => {
   const [selectedId, setSelectedId] = useState("");
 
@@ -18,22 +18,30 @@ const SelectExistingTask = ({
     setSelectedId(taskId);
 
     try {
-      const { error } = await supabase
+      // 🧠 Step 1: Shift all current today's tasks down (order + 1)
+      const { error: reorderError } = await supabase
         .from("tasks")
-        .update({ isToday: true })
-        .eq("id", taskId);
+        .update({ order: supabase.raw("order + 1") })
+        .eq("isToday", true);
+
+      if (reorderError) throw reorderError;
+
+      // 🧠 Step 2: Update the selected task to be today's task with order 0
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ isToday: true, order: 0 })
+        .eq("id", taskId)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      const fullTask = tasks.find((task) => String(task.id) === String(taskId));
-      if (fullTask) {
-        setTodaysTasks((prev) => [...prev, { ...fullTask, isToday: true }]);
-        setNewlyCreatedTaskId(fullTask.id); // ✨ Highlight it!
-      }
-
+      // ✅ Update local state (UI)
+      setTodaysTasks((prev) => [data, ...prev]);
+      setNewlyCreatedTaskId(taskId);
       setSelectedId("");
-    } catch (error) {
-      console.log("❌ Error adding selected task:", error.message);
+    } catch (err) {
+      console.log("❌ Error adding selected task:", err.message);
     }
   };
 
