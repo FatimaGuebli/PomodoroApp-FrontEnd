@@ -19,7 +19,7 @@ const App = () => {
     <Router>
       <div className="flex min-h-screen ">
         <Nav /> {/* Sidebar stays fixed */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 m-0">
           <Routes>
             <Route path="/" element={<PomodoroPage />} />
             <Route path="/goals" element={<GoalsPage />} />
