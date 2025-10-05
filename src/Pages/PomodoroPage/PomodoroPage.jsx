@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../../hooks/useAuth";
 import PomodoroSection from "./PomodoroSection";
 import TaskSection from "./TaskSection/TaskSection";
 import FinishedTasksSection from "./FinishedTasksSection";
@@ -12,9 +13,11 @@ const fetchTasks = async () => {
   return data;
 };
 
-const PomodoroPage = () => {
+const PomodoroPage = (props) => {
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [todaysTasks, setTodaysTasks] = useState([]);
+  const { user } = useAuth();
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
 
   // React Query -> source of truth for remote data
   const { data: queryTasks = [], isLoading, isError, error } = useQuery({
@@ -38,6 +41,38 @@ const PomodoroPage = () => {
   }, [tasksState]);
 
   const selectedTask = tasksState.find((task) => task.id === selectedTaskId);
+
+  const { data: quotes = [] } = useQuery({
+    queryKey: ["userQuotes", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("quotes")
+        .select("id, content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+
+  // rotate every 5 minutes
+  useEffect(() => {
+    if (!quotes || quotes.length === 0) return;
+    // reset index if out of bounds
+    setCurrentQuoteIndex((i) => (i >= quotes.length ? 0 : i));
+    const interval = setInterval(() => {
+      setCurrentQuoteIndex((i) => {
+        const next = (i + 1) % quotes.length;
+        return next;
+      });
+    }, 300000); // 5 minutes
+    return () => clearInterval(interval);
+  }, [quotes]);
+
+  const currentQuote = quotes && quotes.length ? quotes[currentQuoteIndex]?.content : "";
 
   if (isLoading)
     return <div className="text-center mt-10">⏳ Loading tasks...</div>;
@@ -71,9 +106,12 @@ const PomodoroPage = () => {
       </section>
 
       {/* Finished Tasks Section */}
-      <section className="w-full max-w-4xl bg-[#fbe4e5] shadow-inner rounded-xl p-6 border border-[#f3cdd5]">
-        <FinishedTasksSection />
-      </section>
+      {/*
+        <section className="w-full max-w-4xl bg-[#fbe4e5] shadow-inner rounded-xl p-6 border border-[#f3cdd5]">
+          <FinishedTasksSection />
+        </section>
+       */}
+      
     </main>
   );
 };

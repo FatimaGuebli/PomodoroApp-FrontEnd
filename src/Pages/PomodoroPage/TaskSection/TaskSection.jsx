@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DisplayTodaysTasks from "./DisplayTodaysTasks";
 import AddNewTask from "../../../components/AddNewTask";
-import SelectExistingTask from "./SelectexistingTask";
+import SelectExistingTask from "./SelectExistingTask";
 import supabase from "../../../utils/supabase";
 
 const TaskSection = ({
@@ -73,6 +73,7 @@ const TaskSection = ({
               setGoals={setGoals}
               setRefreshTodayTasks={setRefreshTodayTasks}
               setNewlyCreatedTaskId={setNewlyCreatedTaskId} // ✨
+              createdInPomodoro={true}
             />
           </div>
         )}

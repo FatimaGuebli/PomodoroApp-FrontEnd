@@ -3,22 +3,72 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import Confetti from "react-confetti";
 import { useWindowSize } from "@react-hook/window-size";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../../hooks/useAuth";
+import SignInModal from "../../components/SignInModal";
+import usePomodoroSettings from "../../hooks/usePomodoroSettings";
 import supabase from "../../utils/supabase";
 
 const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => {
+  const { user } = useAuth();
+  const [showSignIn, setShowSignIn] = useState(false);
+  // read saved settings but only apply them for authenticated users
+  const savedSettings = usePomodoroSettings();
+  const DEFAULT_FOCUS = 25;
+  const DEFAULT_SHORT = 5;
+  const DEFAULT_LONG = 15;
+
+  const focusMinutes = user ? Number(savedSettings.focusMinutes ?? DEFAULT_FOCUS) : DEFAULT_FOCUS;
+  const shortBreakMinutes = user ? Number(savedSettings.shortBreakMinutes ?? DEFAULT_SHORT) : DEFAULT_SHORT;
+  const longBreakMinutes = user ? Number(savedSettings.longBreakMinutes ?? DEFAULT_LONG) : DEFAULT_LONG;
+
+  const focusSeconds = Math.max(1, focusMinutes) * 60;
+  const shortBreakSeconds = Math.max(1, shortBreakMinutes) * 60;
+  const longBreakSeconds = Math.max(1, longBreakMinutes) * 60;
+
   const pomodoroSessionArray = [
-    { sessionName: "focus", seconds: 10 }, // use test values; replace with real durations
-    { sessionName: "short", seconds: 3 },
-    { sessionName: "long", seconds: 5 },
+    { sessionName: "focus", seconds: focusSeconds },
+    { sessionName: "short", seconds: shortBreakSeconds },
+    { sessionName: "long", seconds: longBreakSeconds },
   ];
 
   const [currentSession, setCurrentSession] = useState(pomodoroSessionArray[0]);
   const [focusLoop, setFocusLoop] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(currentSession.seconds);
+  const [secondsLeft, setSecondsLeft] = useState(() => focusSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [shouldTransition, setShouldTransition] = useState(false);
   const [activeTaskSnapshot, setActiveTaskSnapshot] = useState(null);
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
 
+  // todays tasks shown in the "today" list
+  // (SelectExistingTask removed) — no local todaysTasks/newlyCreatedTaskId in this component now
+
+  // keep currentSession.seconds and secondsLeft in sync when user changes durations in Settings
+  useEffect(() => {
+    const updatedArray = [
+      { sessionName: "focus", seconds: focusSeconds },
+      { sessionName: "short", seconds: shortBreakSeconds },
+      { sessionName: "long", seconds: longBreakSeconds },
+    ];
+
+    // update currentSession object to the new object that matches the same sessionName
+    setCurrentSession((prev) => {
+      const found = updatedArray.find((s) => s.sessionName === prev?.sessionName);
+      return found ?? updatedArray[0];
+    });
+
+    // If timer is not running, update the visible remaining seconds to the new duration.
+    // If running, we avoid changing secondsLeft mid-session.
+    if (!isRunning) {
+      setSecondsLeft(() => {
+        const curName = currentSession?.sessionName ?? "focus";
+        const found = updatedArray.find((s) => s.sessionName === curName) ?? updatedArray[0];
+        return found.seconds;
+      });
+    }
+  // include currentSession.sessionName and isRunning so we compute correct target
+  }, [focusSeconds, shortBreakSeconds, longBreakSeconds, currentSession?.sessionName, isRunning]);
+ 
   const timerRef = useRef(null);
   const endAudioRef = useRef(null);
   const clickSoundRef = useRef(null);
@@ -151,6 +201,10 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
 
   const handleStart = () => {
     playClick();
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
     // Allow starting focus even if no task selected
     setIsRunning(true);
   };
@@ -169,8 +223,8 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
 
   // Show task only during focus sessions; hide during breaks
   const taskToShow = currentSession.sessionName === "focus" ? (activeTaskSnapshot || selectedTask) : null;
-
-  // helper that returns left/right labels and target session keys for sandwich buttons
+  const noTasks = !tasks || tasks.length === 0;
+ // helper that returns left/right labels and target session keys for sandwich buttons
   const getSandwichLabels = (sessionName) => {
     switch (sessionName) {
       case "focus":
@@ -203,13 +257,60 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
     }
   };
 
+  const { data: quotes = [] } = useQuery({
+    queryKey: ["userQuotes", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("quotes")
+        .select("id, content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+
+  // rotate every 5 minutes (now random, avoid immediate repeat)
+  useEffect(() => {
+    if (!quotes || quotes.length === 0) {
+      setCurrentQuoteIndex(0);
+      return;
+    }
+
+    // pick an initial random quote
+    setCurrentQuoteIndex(Math.floor(Math.random() * quotes.length));
+
+    const interval = setInterval(() => {
+      setCurrentQuoteIndex((prevIdx) => {
+        if (!quotes || quotes.length === 0) return 0;
+        if (quotes.length === 1) return 0;
+        // pick a random index different from current (avoid repeating same quote)
+        let next = prevIdx;
+        let attempts = 0;
+        while (next === prevIdx && attempts < 10) {
+          next = Math.floor(Math.random() * quotes.length);
+          attempts++;
+        }
+        return next;
+      });
+    }, 10_000); // changed from 300_000 (5 min) to 10_000 (10 sec) for testing
+
+    return () => clearInterval(interval);
+  }, [quotes]);
+
+  const currentQuote = quotes && quotes.length ? quotes[currentQuoteIndex]?.content : "";
+
   return (
     <>
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
       {showConfetti && <Confetti width={width} height={height} numberOfPieces={150} recycle={false} />}
 
-      <section className="w-full max-w-2xl mx-auto px-6 pt-0 pb-10 flex flex-col items-center text-center space-y-6">
+      <section className="w-full max-w-2xl mx-auto px-6 pt-0  flex flex-col items-center text-center ">
         {/* Sandwich: buttons on both sides of the current session title (clickable to switch session) */}
-        <div className="relative w-full max-w-md flex items-center justify-center">
+        <div className="relative w-full max-w-md flex items-center justify-center pb-0 mb-0 h-12">
           <button
             type="button"
             className="absolute left-0 ml-2 text-sm underline text-[#912d2d] opacity-90 min-w-[88px] text-left truncate"
@@ -267,9 +368,18 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
           />
         </div>
 
-        <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm">
-          “Your future is created by what you do today, not tomorrow.”
-        </blockquote>
+        {/* old/simple quote UI restored — use user quote if available, otherwise fallback text */}
+        <div className="mt-4">
+          {currentQuote ? (
+            <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm mx-auto">
+              “{currentQuote}”
+            </blockquote>
+          ) : (
+            <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm mx-auto">
+              “Your future is created by what you do today, not tomorrow.”
+            </blockquote>
+          )}
+        </div>
 
         <div className="space-x-4">
           {!isRunning && secondsLeft === currentSession.seconds && (
@@ -288,6 +398,8 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
           <p className="text-[#4b2e2e] font-medium text-sm">Focus sessions completed: {focusLoop}</p>
         </div>
       </section>
+
+      {/* Select existing task UI removed from PomodoroSection */}
     </>
   );
 };

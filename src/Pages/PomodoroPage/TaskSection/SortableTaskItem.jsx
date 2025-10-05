@@ -1,10 +1,22 @@
 import React, { useState } from "react";
-import { GripVertical, Pencil } from "lucide-react";
+import { GripVertical, Pencil, X } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useUpdateTask, useDeleteTask } from "../../../hooks/useTaskMutations";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import supabase from "../../../utils/supabase";
 
-const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
+const SortableTaskItem = ({
+  task,
+  setSelectedId,
+  selectedId,
+  compact = false,
+  showGoalName = true,
+  showDragHandle = true,
+  showRemoveGoalButton = true,
+  rightControls = null, // React node to render on the right instead of default remove button
+}) => {
+  const qc = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     description: task.description,
@@ -15,6 +27,32 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
 
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+
+  // load goals for the select dropdown
+  const { data: goals = [], isLoading: goalsLoading } = useQuery({
+    queryKey: ["goals"],
+    queryFn: async () => {
+      // select the real columns present in your goals table
+      const { data, error } = await supabase.from("goals").select("id, name")
+         .order("created_at", { ascending: true });
+       if (error) throw error;
+       return data;
+     },
+     staleTime: 60 * 1000,
+     // reduce noisy retries/refetch while debugging
+     retry: false,
+     refetchOnWindowFocus: false,
+   });
+
+  // derive the goal name for this task (used in non-editing view)
+  const goalName = goalsLoading
+    ? "Loading..."
+    : (goals.find((g) => g.id === task.goal_id)?.name ?? "No goal selected");
+  
+  // local UI state for processing and delete confirmation modal
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const {
     setNodeRef,
@@ -53,6 +91,7 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
       return;
     }
 
+    setIsSaving(true);
     try {
       await updateTaskMutation.mutateAsync({
         id: task.id,
@@ -63,7 +102,9 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
       });
       setIsEditing(false);
     } catch (err) {
-      alert("❌ Failed to update: " + err.message);
+      alert("❌ Failed to update: " + (err?.message || err));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -77,17 +118,30 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
     });
   };
 
-  const handleDelete = async () => {
-    const confirm = window.confirm(
-      "Are you sure you want to delete this task?"
-    );
-    if (!confirm) return;
+  // open confirmation dialog (used by Delete button in edit mode)
+  const handleDelete = (e) => {
+    e?.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
     try {
       await deleteTaskMutation.mutateAsync(task.id);
+      // clear selection if this was selected
+      try {
+        setSelectedId((prev) => (prev === task.id ? null : prev));
+      } catch {}
     } catch (err) {
-      alert("❌ Failed to delete: " + err.message);
+      alert("❌ Failed to delete: " + (err?.message || err));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -101,15 +155,18 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
       } rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-all flex gap-4 items-start`}
       onClick={() => setSelectedId(task.id)}
     >
-      {/* Drag Handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        onClick={(e) => e.stopPropagation()}
-        className="p-2 cursor-grab active:cursor-grabbing text-[#b33a3a]"
-      >
-        <GripVertical className="w-6 h-6" />
-      </button>
+      {/* Drag Handle (only shown when showDragHandle === true) */}
+      {showDragHandle && (
+        <button
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="p-2 cursor-grab active:cursor-grabbing text-[#b33a3a]"
+          aria-hidden={!showDragHandle}
+        >
+          <GripVertical className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Task Content */}
       <div className="flex-1 cursor-default space-y-3">
@@ -168,7 +225,15 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
                 className="w-full border px-4 py-2 rounded-md text-sm"
               >
                 <option value="">No goal selected</option>
-                <option value="demo-goal-id">Demo Goal</option>
+                {goalsLoading ? (
+                  <option disabled>Loading goals…</option>
+                ) : (
+                  goals.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name ?? "Unnamed goal"}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -177,11 +242,12 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete();
+                  handleDelete(e);
                 }}
                 className="text-red-600 text-sm font-medium hover:underline"
+                disabled={isDeleting}
               >
-                Delete
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
               <div className="flex gap-3">
                 <button
@@ -199,8 +265,9 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
                     handleSave();
                   }}
                   className="text-[#b33a3a] text-sm font-semibold hover:underline"
+                  disabled={isSaving}
                 >
-                  Save
+                  {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>
@@ -216,13 +283,57 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
             <p className="text-sm text-[#7c4a4a] opacity-80 mt-1">
               Pomodoros: {task.pomodorosDone} / {task.pomodorosNumber}
             </p>
+            {showGoalName && (
+              <p className={compact ? "text-xs text-[#7c4a4a] opacity-70 mt-1" : "text-xs text-[#7c4a4a] opacity-70 mb-1"}>
+                {goalName}
+              </p>
+            )}
           </div>
         )}
       </div>
 
       {/* Edit Button */}
       {!isEditing && (
-        <div className="flex items-start mt-1">
+        <div className="flex items-start mt-1 gap-2">
+          {/* Right-side controls: either a custom node (rightControls) or the default remove-goal button */}
+          {rightControls ? (
+            rightControls
+          ) : (
+            showRemoveGoalButton && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const prevGoalId = task.goal_id;
+                  const prevTasksByGoal = qc.getQueryData(["tasks", "byGoal", prevGoalId]);
+                  const prevTasksAll = qc.getQueryData(["tasks"]);
+                  try {
+                    if (prevGoalId) {
+                      qc.setQueryData(["tasks", "byGoal", prevGoalId], (old = []) =>
+                        old.filter((t) => String(t.id) !== String(task.id))
+                      );
+                    }
+                    qc.setQueryData(["tasks"], (old = []) => old.filter((t) => String(t.id) !== String(task.id)));
+
+                    await updateTaskMutation.mutateAsync({ id: task.id, goal_id: null });
+
+                    qc.invalidateQueries({ queryKey: ["tasks"] });
+                    if (prevGoalId) qc.invalidateQueries({ queryKey: ["tasks", "byGoal", prevGoalId] });
+                  } catch (err) {
+                    console.error("Failed to remove goal from task:", err);
+                    if (prevGoalId) qc.setQueryData(["tasks", "byGoal", prevGoalId], prevTasksByGoal);
+                    qc.setQueryData(["tasks"], prevTasksAll);
+                  }
+                }}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition"
+                title="Remove goal"
+                aria-label="Remove goal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )
+          )}
+
+          {/* Edit button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -233,6 +344,46 @@ const SortableTaskItem = ({ task, setSelectedId, selectedId }) => {
           >
             <Pencil className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center"
+          onClick={handleCancelDelete}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative z-80 w-full max-w-sm bg-white rounded-lg shadow-lg p-6 mx-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm delete task"
+          >
+            <h4 className="text-lg font-semibold text-[#4b2e2e]">Delete task</h4>
+            <p className="text-sm text-gray-600 mt-2">
+              Are you sure you want to permanently delete this task?
+            </p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                className="px-3 py-1 rounded-md text-sm border hover:bg-gray-50"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-1 rounded-md text-sm bg-red-600 text-white"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </li>
