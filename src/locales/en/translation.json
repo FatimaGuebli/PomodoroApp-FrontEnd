@@ -20,7 +20,7 @@
   "no_goals_selected": "No goals selected",
   "creating": "Creating...",
   "create_task": "Create Task",
-  "todays_tasks": "Today's Tasks",
+  
   "new_task": "New Task",
   "add_existing_task": "Add Existing Task",
 
@@ -95,6 +95,7 @@
   "Delete goal confirmation body": "Are you sure you want to permanently delete this goal and its tasks?",
   "Deleting...": "Deleting...",
   "Delete (confirm button)": "Delete",
+  "todays_tasks":"Today's Tasks",
 
   "_comment07": "unassigned tasks translations",
   "Unassigned Tasks": "Unassigned Tasks",
