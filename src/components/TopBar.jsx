@@ -77,7 +77,7 @@ const TopBar = () => {
               aria-label="Sign in"
               onClick={() => setModalOpen(true)}
             >
-              {t("Sign_in")}
+              {t("sign_in")}
             </button>
           ) : (
             <div className="relative" ref={menuRef}>
