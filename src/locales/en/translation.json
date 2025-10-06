@@ -20,7 +20,9 @@
   "no_goals_selected": "No goals selected",
   "creating": "Creating...",
   "create_task": "Create Task",
-  
+  "todays_tasks": "Today's Tasks",
+  "new_task": "New Task",
+  "add_existing_task": "Add Existing Task",
 
   "_comment03": "nav translations",
   "welcome_to_the_app": "Welcome to the App",
