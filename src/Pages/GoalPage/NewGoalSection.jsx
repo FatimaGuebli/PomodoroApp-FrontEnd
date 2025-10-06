@@ -3,9 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import supabase from "../../utils/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import SignInModal from "../../components/SignInModal";
+import { useTranslation } from "react-i18next";
 
 const NewGoalSection = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [loadingMsg, setLoadingMsg] = useState("");
   const [showSignIn, setShowSignIn] = useState(false);
@@ -19,7 +21,7 @@ const NewGoalSection = () => {
       if (error) throw error;
       return data;
     },
-    onMutate: () => setLoadingMsg("Creating..."),
+    onMutate: () => setLoadingMsg(t("creating")),
     onSuccess: () => {
       setName("");
       qc.invalidateQueries({ queryKey: ["goals"] });
@@ -44,14 +46,14 @@ const NewGoalSection = () => {
 
   return (
     <section className="soft-panel animate-fadeIn">
-      <h2 className="mb-3">Create new goal</h2>
+      <h2 className="mb-3">{t("create_new_goal")}</h2>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-[#4b2e2e] mb-1">Goal name</label>
+          <label className="block text-sm font-medium text-[#4b2e2e] mb-1">{t("goal_name")}</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Learn Spanish"
+            placeholder={t("goal_placeholder")}
             className="w-full border px-3 py-2 rounded-md text-sm"
           />
         </div>
@@ -62,7 +64,7 @@ const NewGoalSection = () => {
             className="btn-primary"
             disabled={createGoal.isLoading}
           >
-            {createGoal.isLoading ? "Creating…" : "Create goal"}
+            {createGoal.isLoading ? t("creating") : t("create_goal_button")}
           </button>
           <span className="text-sm text-gray-600">{loadingMsg}</span>
         </div>

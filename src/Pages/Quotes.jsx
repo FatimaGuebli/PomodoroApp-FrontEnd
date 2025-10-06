@@ -4,6 +4,7 @@ import supabase from "../utils/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { Pencil, Trash2 } from "lucide-react";
 import SignInModal from "../components/SignInModal";
+import { useTranslation } from "react-i18next";
 
 const MAX_QUOTE_LENGTH = 240;
 
@@ -16,6 +17,7 @@ const Quotes = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [showSignIn, setShowSignIn] = useState(false);
+  const { t } = useTranslation();
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["userQuotes", user?.id],
@@ -84,14 +86,14 @@ const Quotes = () => {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-4">
-      <h2 className="text-xl font-semibold text-[#4b2e2e]">Your Motivational Quotes</h2>
+      <h2 className="text-xl font-semibold text-[#4b2e2e]">{t("your_motivational_quotes")}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="relative">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Write a short motivating quote..."
+            placeholder={t("quote_placeholder")}
             className="w-full border px-3 py-2 pb-10 rounded-md text-sm resize-none"
             rows={3}
             maxLength={MAX_QUOTE_LENGTH}
@@ -107,19 +109,19 @@ const Quotes = () => {
             className="btn-primary"
             disabled={addQuote.isLoading || !text.trim()}
           >
-            {addQuote.isLoading ? "Adding…" : "Add Quote"}
+            {addQuote.isLoading ? t("adding") : t("add_quote")}
           </button>
         </div>
       </form>
 
       {/* Quotes list section styled similar to goals list but simpler */}
       <section className="soft-panel animate-fadeIn">
-        <h3 className="mb-3 text-sm font-medium text-[#4b2e2e]">Your saved quotes</h3>
+        <h3 className="mb-3 text-sm font-medium text-[#4b2e2e]">{t("your_saved_quotes")}</h3>
 
         {isLoading ? (
-          <div className="text-sm text-gray-500">Loading…</div>
+          <div className="text-sm text-gray-500">{t("loading")}</div>
         ) : quotes.length === 0 ? (
-          <div className="text-sm text-gray-600">No quotes yet.</div>
+          <div className="text-sm text-gray-600">{t("no_quotes_yet")}</div>
         ) : (
           <ul className="space-y-2">
             {quotes.map((q) => {
@@ -149,7 +151,7 @@ const Quotes = () => {
                             className="px-3 py-1 bg-[#b33a3a] text-white rounded-md text-sm"
                             disabled={updateQuote.isLoading}
                           >
-                            Save
+                            {t("save")}
                           </button>
                           <button
                             onClick={() => {
@@ -158,7 +160,7 @@ const Quotes = () => {
                             }}
                             className="px-3 py-1 border rounded-md text-sm"
                           >
-                            Cancel
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>
@@ -180,7 +182,7 @@ const Quotes = () => {
                         setEditingId(q.id);
                         setEditingText(content);
                       }}
-                      title="Edit quote"
+                      title={t("edit_quote")}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -189,7 +191,7 @@ const Quotes = () => {
                       className="p-2 rounded-md hover:bg-gray-50 text-red-600"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const ok = window.confirm("Delete this quote?");
+                        const ok = window.confirm(t("delete_quote_confirm"));
                         if (!ok) return;
                         try {
                           await deleteQuote.mutateAsync(q.id);
@@ -197,7 +199,7 @@ const Quotes = () => {
                           console.error("Delete failed", err);
                         }
                       }}
-                      title="Delete quote"
+                      title={t("delete_quote")}
                       disabled={deleteQuote.isLoading}
                     >
                       <Trash2 className="w-4 h-4" />

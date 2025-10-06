@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useUpdateTask, useDeleteTask } from "../../../hooks/useTaskMutations";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import supabase from "../../../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 const SortableTaskItem = ({
   task,
@@ -17,6 +18,7 @@ const SortableTaskItem = ({
   rightControls = null, // React node to render on the right instead of default remove button
 }) => {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     description: task.description,
@@ -46,8 +48,8 @@ const SortableTaskItem = ({
 
   // derive the goal name for this task (used in non-editing view)
   const goalName = goalsLoading
-    ? "Loading..."
-    : (goals.find((g) => g.id === task.goal_id)?.name ?? "No goal selected");
+    ? t("loading")
+    : (goals.find((g) => g.id === task.goal_id)?.name ?? t("no_goal_selected"));
   
   // local UI state for processing and delete confirmation modal
   const [isSaving, setIsSaving] = useState(false);
@@ -174,7 +176,7 @@ const SortableTaskItem = ({
           <>
             <div className="space-y-1">
               <label className="text-sm text-[#4b2e2e] font-semibold">
-                Description
+                {t("label_description")}
               </label>
               <input
                 name="description"
@@ -187,7 +189,7 @@ const SortableTaskItem = ({
             <div className="flex gap-4">
               <div className="w-1/2 space-y-1">
                 <label className="text-sm text-[#4b2e2e] font-semibold">
-                  Pomodoros Done
+                  {t("label_pomodoros_done")}
                 </label>
                 <input
                   name="pomodorosDone"
@@ -201,7 +203,7 @@ const SortableTaskItem = ({
               </div>
               <div className="w-1/2 space-y-1">
                 <label className="text-sm text-[#4b2e2e] font-semibold">
-                  Pomodoros Total
+                  {t("label_pomodoros_total")}
                 </label>
                 <input
                   name="pomodorosNumber"
@@ -216,7 +218,7 @@ const SortableTaskItem = ({
 
             <div className="space-y-1">
               <label className="text-sm text-[#4b2e2e] font-semibold">
-                Goal
+                {t("label_goal")}
               </label>
               <select
                 name="goal_id"
@@ -224,13 +226,13 @@ const SortableTaskItem = ({
                 onChange={handleChange}
                 className="w-full border px-4 py-2 rounded-md text-sm"
               >
-                <option value="">No goal selected</option>
+                <option value="">{t("no_goal_selected")}</option>
                 {goalsLoading ? (
-                  <option disabled>Loading goals…</option>
+                  <option disabled>{t("Loading goals…")}</option>
                 ) : (
                   goals.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.name ?? "Unnamed goal"}
+                      {g.name ?? t("unnamed_goal")}
                     </option>
                   ))
                 )}
@@ -247,7 +249,7 @@ const SortableTaskItem = ({
                 className="text-red-600 text-sm font-medium hover:underline"
                 disabled={isDeleting}
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? t("deleting") : t("btn_delete")}
               </button>
               <div className="flex gap-3">
                 <button
@@ -257,7 +259,7 @@ const SortableTaskItem = ({
                   }}
                   className="text-gray-600 text-sm font-medium hover:underline"
                 >
-                  Discard
+                  {t("btn_discard")}
                 </button>
                 <button
                   onClick={(e) => {
@@ -267,7 +269,7 @@ const SortableTaskItem = ({
                   className="text-[#b33a3a] text-sm font-semibold hover:underline"
                   disabled={isSaving}
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? t("saving") : t("btn_save")}
                 </button>
               </div>
             </div>
@@ -325,8 +327,8 @@ const SortableTaskItem = ({
                   }
                 }}
                 className="p-2 text-red-600 hover:bg-red-50 rounded-md transition"
-                title="Remove goal"
-                aria-label="Remove goal"
+                title={t("tooltip_remove_goal")}
+                aria-label={t("tooltip_remove_goal")}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -340,7 +342,7 @@ const SortableTaskItem = ({
               setIsEditing(true);
             }}
             className="p-2 text-[#b33a3a] hover:bg-[#fcebea] rounded-md transition"
-            title="Edit Task"
+            title={t("tooltip_edit_task")}
           >
             <Pencil className="w-4 h-4" />
           </button>
@@ -359,12 +361,10 @@ const SortableTaskItem = ({
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="Confirm delete task"
+            aria-label={t("confirm_delete_task_title")}
           >
-            <h4 className="text-lg font-semibold text-[#4b2e2e]">Delete task</h4>
-            <p className="text-sm text-gray-600 mt-2">
-              Are you sure you want to permanently delete this task?
-            </p>
+            <h4 className="text-lg font-semibold text-[#4b2e2e]">{t("confirm_delete_task_title")}</h4>
+            <p className="text-sm text-gray-600 mt-2">{t("confirm_delete_task_body")}</p>
             <div className="mt-4 flex justify-end gap-3">
               <button
                 type="button"
@@ -372,7 +372,7 @@ const SortableTaskItem = ({
                 className="px-3 py-1 rounded-md text-sm border hover:bg-gray-50"
                 disabled={isDeleting}
               >
-                Cancel
+                {t("btn_cancel")}
               </button>
               <button
                 type="button"
@@ -380,7 +380,7 @@ const SortableTaskItem = ({
                 className="px-4 py-1 rounded-md text-sm bg-red-600 text-white"
                 disabled={isDeleting}
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? t("deleting") : t("btn_delete")}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import supabase from "../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 mr-2" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -40,6 +41,8 @@ const SignInModal = ({ open, onClose }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const { t } = useTranslation();
+
   if (!open) return null;
 
   const handleGoogle = async () => {
@@ -47,7 +50,7 @@ const SignInModal = ({ open, onClose }) => {
       await signInWithGoogle();
     } catch (err) {
       console.error("Google sign-in error:", err);
-      alert(err?.message || "Google sign-in failed.");
+      alert(err?.message || t("Google sign-in failed."));
     }
   };
 
@@ -63,7 +66,7 @@ const SignInModal = ({ open, onClose }) => {
       onClose();
     } catch (err) {
       console.error("Login error:", err);
-      alert(err?.message || "Failed to sign in with email/password.");
+      alert(err?.message || t("Failed to sign in with email/password."));
     } finally {
       setLoading(false);
     }
@@ -71,9 +74,9 @@ const SignInModal = ({ open, onClose }) => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    if (!username.trim()) return alert("Enter a username.");
-    if (signupPassword !== confirmPassword) return alert("Passwords do not match.");
-    if (signupPassword.length < 6) return alert("Password must be at least 6 characters.");
+    if (!username.trim()) return alert(t("Enter a username."));
+    if (signupPassword !== confirmPassword) return alert(t("Passwords do not match."));
+    if (signupPassword.length < 6) return alert(t("Password must be at least 6 characters."));
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -84,15 +87,14 @@ const SignInModal = ({ open, onClose }) => {
         },
       });
       if (error) throw error;
-      alert("Account created — check your email for confirmation (if required).");
+      alert(t("Account created — check your email for confirmation (if required)."));
       // switch to login view and prefill email
       setIsSignup(false);
       setEmail(signupEmail);
       setPassword("");
-      // optionally close modal: onClose();
     } catch (err) {
       console.error("Sign up error:", err);
-      alert(err?.message || "Failed to create account.");
+      alert(err?.message || t("Failed to create account."));
     } finally {
       setLoading(false);
     }
@@ -114,75 +116,75 @@ const SignInModal = ({ open, onClose }) => {
         className="relative z-70 w-full max-w-md bg-white rounded-xl shadow-xl p-6 mx-4"
       >
         <header className="mb-4">
-          <h3 className="text-2xl font-semibold text-[#4b2e2e]">{isSignup ? "Create account" : "Log in"}</h3>
+          <h3 className="text-2xl font-semibold text-[#4b2e2e]">{isSignup ? t("create_account") : t("login")}</h3>
           <p className="text-sm text-gray-600">
             {isSignup
-              ? "Create an account with email, password and username."
-              : "Enter your email and password to continue."}
+              ? t("create_account_with_email_password_and_username")
+              : t("Enter_your_email_and_password_to_continue.")}
           </p>
         </header>
 
         {isSignup ? (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#4b2e2e]">Username</label>
+              <label className="block text-sm font-medium text-[#4b2e2e]">{t("username")}</label>
               <input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Your display name"
+                placeholder={t("your_display_name")}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#4b2e2e]">Email (Gmail)</label>
+              <label className="block text-sm font-medium text-[#4b2e2e]">{t("Email (Gmail)")}</label>
               <input
                 type="email"
                 required
                 value={signupEmail}
                 onChange={(e) => setSignupEmail(e.target.value)}
-                placeholder="you@gmail.com"
+                placeholder={t("you@gmail.com")}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
               />
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium text-[#4b2e2e]">Password</label>
+              <label className="block text-sm font-medium text-[#4b2e2e]">{t("password")}</label>
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={signupPassword}
                 onChange={(e) => setSignupPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder={t("create_a_password")}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 className="absolute right-2 top-9 p-1"
-                aria-label="Toggle password visibility"
+                aria-label={t("toggle_password_visibility")}
               >
                 <EyeIcon open={showPassword} />
               </button>
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium text-[#4b2e2e]">Confirm password</label>
+              <label className="block text-sm font-medium text-[#4b2e2e]">{t("confirm_password")}</label>
               <input
                 type={showConfirm ? "text" : "password"}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm password"
+                placeholder={t("confirm_password")}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((s) => !s)}
                 className="absolute right-2 top-9 p-1"
-                aria-label="Toggle confirm password visibility"
+                aria-label={t("toggle_password_visibility")}
               >
                 <EyeIcon open={showConfirm} />
               </button>
@@ -194,13 +196,13 @@ const SignInModal = ({ open, onClose }) => {
                 disabled={loading}
                 className="w-full px-4 py-2 bg-[#b33a3a] text-white rounded-md text-sm"
               >
-                {loading ? "Creating..." : "Create account"}
+                {loading ? t("creating") : t("create_account")}
               </button>
             </div>
 
             <div className="flex justify-center">
               <button type="button" onClick={() => setIsSignup(false)} className="text-sm mt-2 text-[#4b2e2e] underline">
-                Already have an account? Log in
+                {t("already_have_an_account_log_in")}
               </button>
             </div>
           </form>
@@ -208,32 +210,32 @@ const SignInModal = ({ open, onClose }) => {
           <>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#4b2e2e]">Email</label>
+                <label className="block text-sm font-medium text-[#4b2e2e]">{t("email")}</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t("you_example_email_com")}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
                 />
               </div>
 
               <div className="relative">
-                <label className="block text-sm font-medium text-[#4b2e2e]">Password</label>
+                <label className="block text-sm font-medium text-[#4b2e2e]">{t("password")}</label>
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("••••••••")}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#f8d8d8]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-2 top-9 p-1"
-                  aria-label="Toggle password visibility"
+                  aria-label={t("toggle_password_visibility")}
                 >
                   <EyeIcon open={showPassword} />
                 </button>
@@ -245,32 +247,32 @@ const SignInModal = ({ open, onClose }) => {
                   disabled={loading}
                   className="w-full px-4 py-2 bg-[#b33a3a] text-white rounded-md text-sm"
                 >
-                  {loading ? "Signing in..." : "Log in"}
+                  {loading ? t("Signing in...") : t("Log in")}
                 </button>
               </div>
 
               <div className="flex justify-center">
                 <button type="button" onClick={() => setIsSignup(true)} className="text-sm mt-2 text-[#4b2e2e] underline">
-                  Don't have an account? Sign up
+                  {t("Don't have an account? Sign up")}
                 </button>
               </div>
             </form>
 
             <div className="flex items-center my-4">
               <span className="flex-1 h-px bg-gray-200" />
-              <span className="px-3 text-xs text-gray-500">or</span>
+              <span className="px-3 text-xs text-gray-500">{t("or")}</span>
               <span className="flex-1 h-px bg-gray-200" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#4b2e2e] mb-2">Continue with Google</label>
+              <label className="block text-sm font-medium text-[#4b2e2e] mb-2">{t("Continue with Google")}</label>
               <button
                 type="button"
                 onClick={handleGoogle}
                 className="w-full flex items-center justify-center px-4 py-2 border rounded-md bg-white hover:bg-gray-50"
               >
                 <GoogleIcon />
-                <span className="text-sm font-medium text-[#222]">Continue with Google</span>
+                <span className="text-sm font-medium text-[#222]">{t("Continue with Google")}</span>
               </button>
             </div>
           </>
@@ -282,7 +284,7 @@ const SignInModal = ({ open, onClose }) => {
             onClick={onClose}
             className="text-sm px-3 py-1 rounded-md text-[#4b2e2e] border border-transparent hover:bg-gray-100"
           >
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>

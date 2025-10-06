@@ -7,8 +7,10 @@ import { BsChatRightQuote } from "react-icons/bs";
 import { IoSettingsOutline } from "react-icons/io5";
 import { HiOutlineMenu } from "react-icons/hi";
 import { HiXMark } from "react-icons/hi2";
+import { useTranslation } from "react-i18next";
 
 const Nav = () => {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
   const name = user?.user_metadata?.full_name || user?.email || "Demo User";
@@ -43,7 +45,7 @@ const Nav = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen((s) => !s)}
-            aria-label="Toggle menu"
+            aria-label={t("open_menu")}
             className="text-[#b33a3a] text-2xl"
           >
             <HiOutlineMenu />
@@ -51,7 +53,9 @@ const Nav = () => {
 
           {/* welcome text next to hamburger on md and smaller */}
           <div className="flex flex-col">
-            <span className="text-sm text-[#4b2e2e]">Welcome to the app</span>
+            <span className="text-sm text-[#4b2e2e]">
+              {t("welcome_to_the_app")}
+            </span>
             <span className="text-base font-bold text-[#b33a3a] truncate max-w-[180px]">
               {name}
             </span>
@@ -84,7 +88,7 @@ const Nav = () => {
           }`}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-[#b33a3a]">Menu</h2>
+            <h2 className="text-xl font-bold text-[#b33a3a]">{t("menu")}</h2>
             <button
               onClick={() => setSidebarOpen(false)}
               className="text-2xl text-[#b33a3a]"
@@ -101,7 +105,7 @@ const Nav = () => {
           >
             <div className="flex items-center space-x-2">
               <RiTimerLine className="w-5 h-5" />
-              <span>Pomodoro</span>
+              <span>{t("pomodoro")}</span>
             </div>
           </NavLink>
 
@@ -112,7 +116,7 @@ const Nav = () => {
           >
             <div className="flex items-center space-x-2">
               <GoGoal className="w-5 h-5" />
-              <span>Goals</span>
+              <span>{t("goals")}</span>
             </div>
           </NavLink>
 
@@ -123,7 +127,7 @@ const Nav = () => {
           >
             <div className="flex items-center space-x-2">
               <BsChatRightQuote className="w-5 h-5" />
-              <span>Quotes</span>
+              <span>{t("quotes")}</span>
             </div>
           </NavLink>
 
@@ -135,7 +139,7 @@ const Nav = () => {
             >
               <div className="flex items-center space-x-2">
                 <IoSettingsOutline className="w-5 h-5" />
-                <span>Settings</span>
+                <span>{t("settings")}</span>
               </div>
             </NavLink>
           )}
@@ -149,28 +153,28 @@ const Nav = () => {
       >
         <div className="flex flex-col flex-grow">
           <h1 className="text-2xl font-bold text-[#b33a3a] mb-10 text-center tracking-wide">
-            Pomodoro App
+            {t("pomodoro_app_title") || "Pomodoro App"}
           </h1>
 
           <div className="space-y-3">
             <NavLink to="/" className={linkStyle}>
               <div className="flex items-center space-x-2">
                 <RiTimerLine className="w-5 h-5" />
-                <span>Pomodoro</span>
+                <span>{t("pomodoro")}</span>
               </div>
             </NavLink>
 
             <NavLink to="/goals" className={linkStyle}>
               <div className="flex items-center space-x-2">
                 <GoGoal className="w-5 h-5" />
-                <span>Goals</span>
+                <span>{t("goals")}</span>
               </div>
             </NavLink>
 
             <NavLink to="/quotes" className={linkStyle}>
               <div className="flex items-center space-x-2">
                 <BsChatRightQuote className="w-5 h-5" />
-                <span>Quotes</span>
+                <span>{t("quotes")}</span>
               </div>
             </NavLink>
 
@@ -179,7 +183,7 @@ const Nav = () => {
                 <NavLink to="/settings" className={linkStyle}>
                   <div className="flex items-center space-x-2">
                     <IoSettingsOutline className="w-5 h-5" />
-                    <span>Settings</span>
+                    <span>{t("settings")}</span>
                   </div>
                 </NavLink>
               </div>

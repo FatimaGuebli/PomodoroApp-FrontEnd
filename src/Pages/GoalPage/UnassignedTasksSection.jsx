@@ -4,8 +4,10 @@ import supabase from "../../utils/supabase";
 import SortableTaskItem from "../PomodoroPage/TaskSection/SortableTaskItem";
 import { useAuth } from "../../hooks/useAuth";
 import SignInModal from "../../components/SignInModal";
+import { useTranslation } from "react-i18next";
 
 const UnassignedTasksSection = () => {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState(null);
   const { user } = useAuth();
   const [showSignIn, setShowSignIn] = useState(false);
@@ -57,34 +59,34 @@ const UnassignedTasksSection = () => {
 
   return (
     <section className="soft-panel animate-fadeIn">
-      <h2 className="mb-3">Unassigned Tasks</h2>
+      <h2 className="mb-3">{t("Unassigned Tasks")}</h2>
 
       {isLoading ? (
-        <p className="text-sm text-gray-600">Loading…</p>
+        <p className="text-sm text-gray-600">{t("Loading…")}</p>
       ) : isError ? (
-        <p className="text-sm text-red-600">Failed to load tasks.</p>
+        <p className="text-sm text-red-600">{t("Failed to load tasks.")}</p>
       ) : tasks.length === 0 ? (
-        <p className="text-sm text-gray-600">No tasks without a goal.</p>
+        <p className="text-sm text-gray-600">{t("No tasks without a goal.")}</p>
       ) : (
         <ul className="space-y-3">
-          {tasks.map((t) => (
+          {tasks.map((titem) => (
             <SortableTaskItem
-              key={t.id}
-              task={t}
+              key={titem.id}
+              task={titem}
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               showGoalName={false}
               showDragHandle={false}
               showRemoveGoalButton={false}
               rightControls={
-                assignForTaskId === t.id ? (
+                assignForTaskId === titem.id ? (
                   <div className="flex items-center gap-2">
                     <select
                       value={chosenGoalId}
                       onChange={(e) => setChosenGoalId(e.target.value)}
                       className="border rounded-md px-2 py-1 text-sm"
                     >
-                      <option value="">Select goal…</option>
+                      <option value="">{t("Select goal…")}</option>
                       {goals.map((g) => (
                         <option key={g.id} value={g.id}>
                           {g.name}
@@ -92,11 +94,11 @@ const UnassignedTasksSection = () => {
                       ))}
                     </select>
                     <button
-                      onClick={() => assignGoalMutation.mutate({ taskId: t.id, goalId: chosenGoalId || null })}
+                      onClick={() => assignGoalMutation.mutate({ taskId: titem.id, goalId: chosenGoalId || null })}
                       disabled={assignGoalMutation.isLoading || !chosenGoalId}
                       className="px-2 py-1 bg-[#b33a3a] text-white rounded-md text-sm"
                     >
-                      Save
+                      {t("Save")}
                     </button>
                     <button
                       onClick={() => {
@@ -105,7 +107,7 @@ const UnassignedTasksSection = () => {
                       }}
                       className="px-2 py-1 border rounded-md text-sm"
                     >
-                      Cancel
+                      {t("Cancel")}
                     </button>
                   </div>
                 ) : (
@@ -116,12 +118,12 @@ const UnassignedTasksSection = () => {
                         setShowSignIn(true);
                         return;
                       }
-                      setAssignForTaskId(t.id);
+                      setAssignForTaskId(titem.id);
                       setChosenGoalId("");
                     }}
                     className="px-2 py-1 bg-green-50 text-green-700 rounded-md text-sm"
                   >
-                    Assign
+                    {t("Assign")}
                   </button>
                 )
               }

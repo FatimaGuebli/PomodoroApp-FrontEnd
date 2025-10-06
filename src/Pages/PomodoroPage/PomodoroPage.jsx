@@ -5,6 +5,7 @@ import PomodoroSection from "./PomodoroSection";
 import TaskSection from "./TaskSection/TaskSection";
 import FinishedTasksSection from "./FinishedTasksSection";
 import supabase from "../../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 // fetch tasks from Supabase
 const fetchTasks = async () => {
@@ -14,6 +15,7 @@ const fetchTasks = async () => {
 };
 
 const PomodoroPage = (props) => {
+  const { t } = useTranslation();
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [todaysTasks, setTodaysTasks] = useState([]);
   const { user } = useAuth();
@@ -75,11 +77,13 @@ const PomodoroPage = (props) => {
   const currentQuote = quotes && quotes.length ? quotes[currentQuoteIndex]?.content : "";
 
   if (isLoading)
-    return <div className="text-center mt-10">⏳ Loading tasks...</div>;
+    return <div className="text-center mt-10">⏳ {t("Loading…")}</div>;
 
   if (isError)
     return (
-      <div className="text-center mt-10 text-red-600">❌ {error.message}</div>
+      <div className="text-center mt-10 text-red-600">
+        ❌ {t("Failed to load tasks.")}
+      </div>
     );
 
   return (

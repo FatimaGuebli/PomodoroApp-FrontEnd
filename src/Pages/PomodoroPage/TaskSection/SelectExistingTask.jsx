@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import supabase from "../../../utils/supabase";
 import { useAuth } from "../../../hooks/useAuth";
 import SignInModal from "../../../components/SignInModal";
+import { useTranslation } from "react-i18next";
 
 const SelectExistingTask = ({
   tasks,
@@ -11,6 +12,7 @@ const SelectExistingTask = ({
   setNewlyCreatedTaskId,
 }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState("");
   const [showSignIn, setShowSignIn] = useState(false);
   const [showNoTasksHint, setShowNoTasksHint] = useState(false);
@@ -18,8 +20,8 @@ const SelectExistingTask = ({
   // auto-hide hint after a few seconds
   useEffect(() => {
     if (!showNoTasksHint) return;
-    const t = setTimeout(() => setShowNoTasksHint(false), 3000);
-    return () => clearTimeout(t);
+    const tId = setTimeout(() => setShowNoTasksHint(false), 3000);
+    return () => clearTimeout(tId);
   }, [showNoTasksHint]);
 
   // fetch latest tasks if parent didn't provide fresh data
@@ -89,11 +91,11 @@ const SelectExistingTask = ({
   return (
     <div className="mb-6 mt-4">
       <label className="block text-sm font-semibold text-[#4b2e2e] mb-2">
-        📌 Select a task to add:
+        {t("select_task_label")}
       </label>
 
       {isLoading && (!tasks || tasks.length === 0) ? (
-        <div className="text-sm text-gray-500">Loading tasks…</div>
+        <div className="text-sm text-gray-500">{t("loading_tasks")}</div>
       ) : (
         <>
           <select
@@ -102,7 +104,7 @@ const SelectExistingTask = ({
             onFocus={handleFocus}
             className="w-full bg-white border border-[#f4e1e6] rounded-md px-4 py-2 text-sm text-[#4b2e2e] shadow-sm focus:ring-2 focus:ring-[#b33a3a] focus:outline-none transition"
           >
-            <option value="">-- Select a task --</option>
+            <option value="">{t("select_option_placeholder")}</option>
             {nonSelectedTasks.map((task) => (
               <option key={task.id} value={task.id}>
                 {task.description}
@@ -112,7 +114,7 @@ const SelectExistingTask = ({
 
           {showNoTasksHint && (
             <div className="mt-2 text-sm text-[#b33a3a] bg-[#fff4f4] border border-[#f4e1e6] inline-block px-3 py-1 rounded">
-              No existing tasks yet — create your first task.
+              {t("no_existing_tasks_hint")}
             </div>
           )}
         </>

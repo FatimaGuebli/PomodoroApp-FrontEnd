@@ -16,6 +16,7 @@ import {
 
 import SortableTaskItem from "./SortableTaskItem";
 import supabase from "../../../utils/supabase"; // ✅ import supabase
+import { useTranslation } from "react-i18next";
 
 const DisplayTodaysTasks = ({
   todaysTasks,
@@ -23,6 +24,7 @@ const DisplayTodaysTasks = ({
   selectedId,
   setSelectedId,
 }) => {
+  const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -64,7 +66,7 @@ const DisplayTodaysTasks = ({
   return (
     <div className="space-y-5">
       {todaysTasks.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">No tasks for today yet.</p>
+        <p className="text-sm text-gray-400 italic">{t("no_tasks_today")}</p>
       ) : (
         <DndContext
           sensors={sensors}

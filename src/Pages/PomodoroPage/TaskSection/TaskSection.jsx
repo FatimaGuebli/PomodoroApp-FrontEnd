@@ -3,6 +3,7 @@ import DisplayTodaysTasks from "./DisplayTodaysTasks";
 import AddNewTask from "../../../components/AddNewTask";
 import SelectExistingTask from "./SelectExistingTask";
 import supabase from "../../../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 const TaskSection = ({
   tasks,
@@ -12,6 +13,7 @@ const TaskSection = ({
   selectedTaskId,
   setSelectedTaskId,
 }) => {
+  const { t } = useTranslation();
   const [goals, setGoals] = useState([]);
   const [newTaskButtonState, setNewTaskButtonState] = useState(false);
   const [selectExistingButtonState, setSelectExistingButtonState] =
@@ -48,17 +50,19 @@ const TaskSection = ({
 
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-bold text-[#b33a3a] mb-2">Today's Tasks</h2>
+      <h2 className="text-2xl font-bold text-[#b33a3a] mb-2">
+        {t("todays_tasks")}
+      </h2>
 
       <div className="flex gap-4 flex-wrap mb-4">
         <button onClick={handleNewTaskButton} className="btn-primary w-50">
-          New Task
+          {t("new_task")}
         </button>
         <button
           onClick={handleSelectExistingButton}
           className="btn-primary w-60"
         >
-          Add Existing Task
+          {t("add_existing_task")}
         </button>
       </div>
 

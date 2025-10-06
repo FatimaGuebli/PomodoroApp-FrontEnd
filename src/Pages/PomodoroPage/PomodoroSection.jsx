@@ -8,8 +8,10 @@ import { useAuth } from "../../hooks/useAuth";
 import SignInModal from "../../components/SignInModal";
 import usePomodoroSettings from "../../hooks/usePomodoroSettings";
 import supabase from "../../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [showSignIn, setShowSignIn] = useState(false);
   // read saved settings but only apply them for authenticated users
@@ -237,8 +239,8 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
         return { left: { label: "Short break", session: "short" }, right: { label: "Long break", session: "long" } };
     }
   };
-
-  const { left: leftMeta, right: rightMeta } = getSandwichLabels(currentSession.sessionName);
+ 
+   const { left: leftMeta, right: rightMeta } = getSandwichLabels(currentSession.sessionName);
 
   // switch immediately to the given session (no extra side-effects beyond stopping timer and snapshot handling)
   const switchToSession = (sessionKey) => {
@@ -315,42 +317,46 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
             type="button"
             className="absolute left-0 ml-2 text-sm underline text-[#912d2d] opacity-90 min-w-[88px] text-left truncate"
             onClick={() => switchToSession(leftMeta.session)}
-            aria-label={`Switch to ${leftMeta.label}`}
+            aria-label={`${t("switch_to")} ${t(leftMeta.label)}`}
           >
-            {leftMeta.label}
+            {t(leftMeta.label)}
           </button>
 
           <h2 className="text-lg font-semibold text-[#b33a3a] tracking-widest uppercase text-center px-4">
-            {currentSession.sessionName} session
+            {currentSession.sessionName === "focus"
+              ? t("Focus")
+              : currentSession.sessionName === "short"
+              ? t("Short break")
+              : t("Long break")}
           </h2>
 
           <button
             type="button"
             className="absolute right-0 mr-2 text-sm underline text-[#912d2d] opacity-90 min-w-[88px] text-right truncate"
             onClick={() => switchToSession(rightMeta.session)}
-            aria-label={`Switch to ${rightMeta.label}`}
+            aria-label={`${t("switch_to")} ${t(rightMeta.label)}`}
           >
-            {rightMeta.label}
+            {t(rightMeta.label)}
           </button>
         </div>
 
         {/* Header: show current task only on focus; otherwise show break label */}
         {currentSession.sessionName === "focus" ? (
           <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-1">
-            Current Task:{" "}
+            {t("current_task")}{" "}
             {taskToShow ? (
               <span>{taskToShow.description}</span>
             ) : (
-              <span className="italic text-gray-400">No task selected</span>
+              <span className="italic text-gray-400">{t("no_task_selected")}</span>
             )}
           </h1>
         ) : (
           <h1 className="text-2xl font-bold text-[#4b2e2e] tracking-wide mb-1">
             {currentSession.sessionName === "short"
-              ? "Short break"
+              ? t("Short break")
               : currentSession.sessionName === "long"
-              ? "Long break"
-              : "Break"}
+              ? t("Long break")
+              : t("Break")}
           </h1>
         )}
 
@@ -370,36 +376,45 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
 
         {/* old/simple quote UI restored — use user quote if available, otherwise fallback text */}
         <div className="mt-4">
-          {currentQuote ? (
-            <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm mx-auto">
-              “{currentQuote}”
-            </blockquote>
-          ) : (
-            <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm mx-auto">
-              “Your future is created by what you do today, not tomorrow.”
-            </blockquote>
-          )}
+          <blockquote className="mt-4 italic text-[#4b2e2e] text-base opacity-90 font-[cursive] max-w-sm mx-auto">
+            {currentQuote ? `“${currentQuote}”` : `“${t("default_quote")}”`}
+          </blockquote>
         </div>
 
         <div className="space-x-4">
           {!isRunning && secondsLeft === currentSession.seconds && (
-            <button className="btn-primary px-8 py-3" onClick={handleStart}>Start</button>
+            <button className="btn-primary px-8 py-3" onClick={handleStart}>
+              {t("start")}
+            </button>
           )}
 
           {!isRunning && secondsLeft < currentSession.seconds && (
-            <button className="btn-primary px-8 py-3" onClick={handleStart}>Resume</button>
+            <button className="btn-primary px-8 py-3" onClick={handleStart}>
+              {t("resume")}
+            </button>
           )}
 
-          {isRunning && <button className="btn-primary px-8 py-3" onClick={handlePause}>Pause</button>}
+          {isRunning && (
+            <button className="btn-primary px-8 py-3" onClick={handlePause}>
+              {t("pause")}
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col items-center space-y-2">
-          <button className="text-sm underline text-[#912d2d] hover:text-[#b33a3a] transition-all" onClick={handleSkip}>Skip session?</button>
-          <p className="text-[#4b2e2e] font-medium text-sm">Focus sessions completed: {focusLoop}</p>
+          <button
+            className="text-sm underline text-[#912d2d] hover:text-[#b33a3a] transition-all"
+            onClick={handleSkip}
+          >
+            {t("skip_session")}
+          </button>
+          <p className="text-[#4b2e2e] font-medium text-sm">
+            {t("focus_sessions_completed")} {focusLoop}
+          </p>
         </div>
       </section>
 
-      {/* Select existing task UI removed from PomodoroSection */}
+      
     </>
   );
 };

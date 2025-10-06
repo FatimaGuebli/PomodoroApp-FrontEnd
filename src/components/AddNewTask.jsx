@@ -3,11 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import supabase from "../utils/supabase";
 import { useAuth } from "../hooks/useAuth";
 import SignInModal from "./SignInModal";
+import { useTranslation } from "react-i18next";
 
 const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, createdInPomodoro = false }) => {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [showSignIn, setShowSignIn] = useState(false);
+  const { t } = useTranslation();
 
   const { data: goalsData = [], isLoading: goalsLoading } = useQuery({
     queryKey: ["goals"],
@@ -41,7 +43,7 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
     e.preventDefault();
 
     if (!taskDescription.trim()) {
-      alert("Please enter a task description.");
+      alert(t("enter_task_description"));
       return;
     }
 
@@ -59,7 +61,6 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
         await supabase.from("tasks").update({ order: supabase.raw("order + 1") }).eq("isToday", true);
       } catch (reorderErr) {
         // ignore reorder failure — not fatal for creating the task
-        // console.warn("Reorder failed", reorderErr);
       }
 
       const payload = {
@@ -76,7 +77,7 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
       const { data, error } = await supabase.from("tasks").insert([payload]).select().single();
 
       if (error) {
-        alert("Insert failed: " + (error.message || JSON.stringify(error)));
+        alert(t("insert_failed", { msg: error.message || JSON.stringify(error) }));
         return;
       }
 
@@ -91,7 +92,7 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
       setPomodoroNumber(1);
       setSelectedGoal("");
     } catch (err) {
-      alert("Unexpected error: " + (err.message || String(err)));
+      alert(t("unexpected_error", { msg: err.message || String(err) }));
     } finally {
       setIsSubmitting(false);
     }
@@ -101,18 +102,18 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
     <div>
       <form onSubmit={handleSubmit} className="bg-[#fff4f4] p-6 rounded-xl shadow-md border border-[#f4e1e6] space-y-5">
         <div>
-          <label className="block text-[#4b2e2e] font-medium mb-1">📝 Task Description</label>
+          <label className="block text-[#4b2e2e] font-medium mb-1">{t("label_task_description")}</label>
           <input
             required
             value={taskDescription}
             onChange={(e) => setTaskDescription(e.target.value)}
             className="w-full px-4 py-2 border border-[#f4e1e6] rounded-md text-[#4b2e2e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b33a3a]"
-            placeholder="e.g. Study Genki Lesson 5"
+            placeholder={t("placeholder_task_example")}
           />
         </div>
 
         <div>
-          <label className="block text-[#4b2e2e] font-medium mb-1">🍅 Pomodoro Count</label>
+          <label className="block text-[#4b2e2e] font-medium mb-1">{t("label_pomodoro_count")}</label>
           <div className="flex items-center space-x-4">
             <button type="button" onClick={handleDecrease} className="bg-[#f4e1e6] text-[#b33a3a] px-3 py-1 rounded-md font-bold hover:bg-[#f2cfd7]">
               -
@@ -125,16 +126,16 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
         </div>
 
         <div>
-          <label className="block text-[#4b2e2e] font-medium mb-1">🎯 Assign to Goal</label>
+          <label className="block text-[#4b2e2e] font-medium mb-1">{t("label_assign_goal")}</label>
           {goalsLoading ? (
-            <div className="text-sm text-gray-500">Loading goals…</div>
+            <div className="text-sm text-gray-500">{t("loading_goals")}</div>
           ) : (
             <select
               value={selectedGoal}
               onChange={(e) => setSelectedGoal(e.target.value)}
               className="w-full px-4 py-2 border border-[#f4e1e6] rounded-md text-[#4b2e2e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b33a3a]"
             >
-              <option value="">No goal selected</option>
+              <option value="">{t("no_goals_selected")}</option>
               {(goalsData || []).map((goal) => (
                 <option key={goal.id} value={goal.id}>
                   {goal.name}
@@ -152,10 +153,10 @@ const AddNewTask = ({ goalId = "", onClose = () => {}, onCreated = () => {}, cre
               isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-[#b33a3a] hover:bg-[#912d2d]"
             }`}
           >
-            {isSubmitting ? "Creating..." : "Create Task"}
+            {isSubmitting ? t("creating_task") : t("create_task_button")}
           </button>
           <button type="button" onClick={() => onClose()} className="py-2 px-4 rounded-md border">
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </form>

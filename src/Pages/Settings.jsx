@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import supabase from "../utils/supabase";
+import { useTranslation } from "react-i18next";
 
 const DEFAULTS = {
   focusMinutes: 25,
@@ -14,6 +15,7 @@ const STORAGE_KEY = "pomodoroSettings";
 const Settings = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [focusMinutes, setFocusMinutes] = useState(DEFAULTS.focusMinutes);
   const [shortBreakMinutes, setShortBreakMinutes] = useState(DEFAULTS.shortBreakMinutes);
@@ -115,7 +117,7 @@ const Settings = () => {
     const payload = payloadFromState();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     setOriginalSettings(payload);
-    setStatus("Saved");
+    setStatus(t("save") || "Saved");
     setTimeout(() => setStatus(""), 1500);
     qc.invalidateQueries({ queryKey: ["pomodoroSettings"] });
   };
@@ -126,7 +128,7 @@ const Settings = () => {
     setLongBreakMinutes(DEFAULTS.longBreakMinutes);
     localStorage.removeItem(STORAGE_KEY);
     setOriginalSettings({ ...DEFAULTS });
-    setStatus("Reset to defaults");
+    setStatus(t("reset") || "Reset to defaults");
     setTimeout(() => setStatus(""), 1500);
     qc.invalidateQueries({ queryKey: ["pomodoroSettings"] });
   };
@@ -141,12 +143,12 @@ const Settings = () => {
     const { data: userData } = await supabase.auth.getUser();
     console.debug("auth.getUser ->", userData?.user?.id, "app user ->", user?.id);
     if (!user?.id || user?.id !== userData?.user?.id) {
-      setProfileStatus("Authentication mismatch — please sign out and sign in again.");
+      setProfileStatus(t("authentication_mismatch") || "Authentication mismatch — please sign out and sign in again.");
       setTimeout(() => setProfileStatus(""), 3000);
       return;
     }
     if (!user?.id) {
-      setProfileStatus("Sign in to update profile");
+      setProfileStatus(t("sign_in_to_update_profile") || "Sign in to update profile");
       setTimeout(() => setProfileStatus(""), 2000);
       return;
     }
@@ -170,13 +172,13 @@ const Settings = () => {
       if (error) throw error;
 
       setOriginalProfile({ name: data.full_name ?? "" });
-      setProfileStatus("Profile updated");
+      setProfileStatus(t("profile_updated") || "Profile updated");
       setTimeout(() => setProfileStatus(""), 1500);
       qc.invalidateQueries({ queryKey: ["profiles", user.id] });
     } catch (err) {
       console.error("Failed to save profile (final):", err);
       const msg = err?.message || JSON.stringify(err) || "Failed to update profile";
-      setProfileStatus(`Profile error: ${msg}`);
+      setProfileStatus((t("profile_error") ? `${t("profile_error")} ${msg}` : `Profile error: ${msg}`) || `Profile error: ${msg}`);
       setTimeout(() => setProfileStatus(""), 6000);
     } finally {
       setProfileLoading(false);
@@ -185,13 +187,13 @@ const Settings = () => {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h2 className="text-xl font-semibold text-[#4b2e2e]">Timer settings</h2>
+      <h2 className="text-xl font-semibold text-[#4b2e2e]">{t("timer_settings")}</h2>
 
       <div className="soft-panel space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm text-gray-600">Focus period</div>
-            <div className="text-lg font-semibold text-[#4b2e2e]">{focusMinutes} minutes</div>
+            <div className="text-sm text-gray-600">{t("focus_period")}</div>
+            <div className="text-lg font-semibold text-[#4b2e2e]">{focusMinutes} {t("minutes")}</div>
           </div>
           <div>
             <input
@@ -208,8 +210,8 @@ const Settings = () => {
 
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm text-gray-600">Short break</div>
-            <div className="text-lg font-semibold text-[#4b2e2e]">{shortBreakMinutes} minutes</div>
+            <div className="text-sm text-gray-600">{t("short_break")}</div>
+            <div className="text-lg font-semibold text-[#4b2e2e]">{shortBreakMinutes} {t("minutes")}</div>
           </div>
           <div>
             <input
@@ -226,8 +228,8 @@ const Settings = () => {
 
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm text-gray-600">Long break</div>
-            <div className="text-lg font-semibold text-[#4b2e2e]">{longBreakMinutes} minutes</div>
+            <div className="text-sm text-gray-600">{t("long_break")}</div>
+            <div className="text-lg font-semibold text-[#4b2e2e]">{longBreakMinutes} {t("minutes")}</div>
           </div>
           <div>
             <input
@@ -250,34 +252,32 @@ const Settings = () => {
             }`}
             disabled={!hasChanges}
           >
-            Save
+            {t("save")}
           </button>
           <button onClick={reset} className="px-3 py-1 border rounded-md">
-            Reset
+            {t("reset")}
           </button>
           <div className="text-sm text-gray-500">{status}</div>
         </div>
 
-        <div className="text-xs text-gray-400">
-          Values are stored locally. Update your Pomodoro timer component to read from localStorage key "{STORAGE_KEY}".
-        </div>
+        
       </div>
 
       {/* Profile section (avatar removed) */}
-      <h2 className="text-xl font-semibold text-[#4b2e2e]">Profile settings</h2>
+      {/*<h2 className="text-xl font-semibold text-[#4b2e2e]">{t("profile_settings")}</h2>
 
       <div className="soft-panel">
         <div className="flex items-center gap-6">
           <div className="flex-1">
             <div className="w-full mr-4">
-              <label className="block text-sm text-gray-600">Display name</label>
+              <label className="block text-sm text-gray-600">{t("display_name")}</label>
               <input
                 type="text"
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 className="w-full border px-3 py-2 rounded-md text-sm"
                 disabled={!user || profileLoading}
-                placeholder={user ? "Your name" : "Sign in to edit"}
+                placeholder={user ? t("your_name") : t("sign_in_to_edit")}
               />
             </div>
 
@@ -289,7 +289,7 @@ const Settings = () => {
                   profileHasChanges ? "bg-[#b33a3a] hover:bg-[#912d2d]" : "bg-gray-400 cursor-not-allowed opacity-75"
                 }`}
               >
-                {profileLoading ? "Saving…" : "Save profile"}
+                {profileLoading ? t("saving") : t("save_profile")}
               </button>
 
               <button
@@ -300,14 +300,14 @@ const Settings = () => {
                 className="px-3 py-1 border rounded-md"
                 disabled={profileLoading}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
 
             <div className="text-sm text-gray-500 mt-3">{profileStatus}</div>
           </div>
         </div>
-      </div>
+      </div>*/}
     </div>
   );
 };
