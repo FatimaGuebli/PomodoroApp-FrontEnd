@@ -74,10 +74,10 @@ const TopBar = () => {
           {!user ? (
             <button
               className="text-sm px-3 py-1 bg-[#b33a3a] text-white rounded-md hover:bg-[#912d2d]"
-              aria-label="Sign in"
+              aria-label={t("topbar_sign_in")}
               onClick={() => setModalOpen(true)}
             >
-              {t("sign_in")}
+              {t("topbar_sign_in")}
             </button>
           ) : (
             <div className="relative" ref={menuRef}>
