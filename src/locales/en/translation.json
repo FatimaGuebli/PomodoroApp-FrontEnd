@@ -21,8 +21,8 @@
   "creating": "Creating...",
   "create_task": "Create Task",
   
-  "new_task": "New Task",
-  "add_existing_task": "Add Existing Task",
+  "new_task": "New task",
+  "add_existing_task": "Add existing task",
 
   "_comment03": "nav translations",
   "welcome_to_the_app": "Welcome to the App",
@@ -95,7 +95,7 @@
   "Delete goal confirmation body": "Are you sure you want to permanently delete this goal and its tasks?",
   "Deleting...": "Deleting...",
   "Delete (confirm button)": "Delete",
-  "todays_tasks":"Today's Tasks",
+  "todays_tasks": "Today's tasks",
 
   "_comment07": "unassigned tasks translations",
   "Unassigned Tasks": "Unassigned Tasks",
