@@ -12,6 +12,7 @@
   "pause": "Pause",
   "resume": "Resume",
   "focus_sessions_completed": "Focus sessions completed:",
+  "goal_name": "Goal name",
 
   "_comment02": "add new task translations",
   "task_description": "Task Description",
