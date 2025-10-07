@@ -2,6 +2,8 @@
   "routes": [
     { "src": "/_next/static/(.*)", "dest": "/_next/static/$1" },
     { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*\\.(js|css|map|png|jpg|jpeg|svg|ico|json|woff2?|ttf))", "dest": "/$1" },
     { "src": "/favicon.ico", "dest": "/favicon.ico" },
 
     { "src": "/", "dest": "/" },
