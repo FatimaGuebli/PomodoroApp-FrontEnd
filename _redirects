@@ -1,0 +1,26 @@
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/index.html",
+      "status": 200
+    }
+  ],
+  "location": {
+    "/": {
+      "try_files": ["$uri", "$uri/", "/index.html"]
+    }
+  },
+  "fallbackResource": "/index.html"
+}
