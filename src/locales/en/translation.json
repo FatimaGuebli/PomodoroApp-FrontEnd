@@ -20,6 +20,7 @@
   "no_goals_selected": "No goals selected",
   "creating": "Creating...",
   "create_task": "Create Task",
+  "create_goal_button": "Create Goal",
   
   "new_task": "New task",
   "add_existing_task": "Add existing task",
@@ -127,6 +128,8 @@
   "enter_task_description": "Please enter a task description.",
   "insert_failed": "Insert failed: {{msg}}",
   "unexpected_error": "Unexpected error: {{msg}}",
+  "create_new_goal": "Create new goal", 
+  "goal_placeholder": "e.g. Japanese Learning", 
 
 
   "_comment_settings": "settings translations",
