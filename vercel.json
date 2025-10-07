@@ -1,22 +1,5 @@
 {
-  "routes": [
-    { "src": "/_next/static/(.*)", "dest": "/_next/static/$1" },
-    { "src": "/static/(.*)", "dest": "/static/$1" },
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/(.*\\.(js|css|map|png|jpg|jpeg|svg|ico|json|woff2?|ttf))", "dest": "/$1" },
-    { "src": "/favicon.ico", "dest": "/favicon.ico" },
-
-    { "src": "/", "dest": "/" },
-    { "src": "/pomodoro", "dest": "/" },
-    { "src": "/goals", "dest": "/" },
-    { "src": "/goals/(.*)", "dest": "/" },
-    { "src": "/tasks", "dest": "/" },
-    { "src": "/tasks/(.*)", "dest": "/" },
-    { "src": "/quotes", "dest": "/" },
-    { "src": "/settings", "dest": "/" },
-    { "src": "/profile", "dest": "/" },
-    { "src": "/auth/(.*)", "dest": "/" },
-
-    { "src": "/(.*)", "dest": "/" }
-  ]
+    "rewrites": [
+        { "source": "/(.*)", "destination": "/" }
+    ]
 }
