@@ -1,11 +1,20 @@
 {
-    "routes": [
-        { "src": "/", "dest": "/" },
-        { "src": "/goals", "dest": "/" },
-        { "src": "/quotes", "dest": "/" },
-        { "src": "/settings", "dest": "/" },
+  "routes": [
+    { "src": "/_next/static/(.*)", "dest": "/_next/static/$1" },
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/favicon.ico", "dest": "/favicon.ico" },
 
-        
-        { "src": "/(.*)", "dest": "/" }
-    ]
+    { "src": "/", "dest": "/" },
+    { "src": "/pomodoro", "dest": "/" },
+    { "src": "/goals", "dest": "/" },
+    { "src": "/goals/(.*)", "dest": "/" },
+    { "src": "/tasks", "dest": "/" },
+    { "src": "/tasks/(.*)", "dest": "/" },
+    { "src": "/quotes", "dest": "/" },
+    { "src": "/settings", "dest": "/" },
+    { "src": "/profile", "dest": "/" },
+    { "src": "/auth/(.*)", "dest": "/" },
+
+    { "src": "/(.*)", "dest": "/" }
+  ]
 }
