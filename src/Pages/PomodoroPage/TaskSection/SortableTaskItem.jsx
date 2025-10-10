@@ -303,37 +303,41 @@ const SortableTaskItem = ({
           ) : (
             showRemoveGoalButton && (
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
                   const prevGoalId = task.goal_id;
                   const prevTasksByGoal = qc.getQueryData(["tasks", "byGoal", prevGoalId]);
                   const prevTasksAll = qc.getQueryData(["tasks"]);
-                  try {
-                    if (prevGoalId) {
-                      qc.setQueryData(["tasks", "byGoal", prevGoalId], (old = []) =>
-                        old.filter((t) => String(t.id) !== String(task.id))
-                      );
-                    }
+                  const prevToday = qc.getQueryData(["tasks", "today"]);
 
-                    // optimistically remove from global tasks cache so it disappears from today's list immediately
-                    qc.setQueryData(["tasks"], (old = []) => old.filter((t) => String(t.id) !== String(task.id)));
-
-                    // prepare payload: remove goal and, if currently isToday, set isToday=false so it leaves today's list
-                    const payload = { id: task.id, goal_id: null };
-                    if (task.isToday) payload.isToday = false;
-
-                    await updateTaskMutation.mutateAsync(payload);
-
-                    // ensure queries are fresh
-                    qc.invalidateQueries({ queryKey: ["tasks"] });
-                    if (prevGoalId) qc.invalidateQueries({ queryKey: ["tasks", "byGoal", prevGoalId] });
-                    // if you have a dedicated today query key, invalidate it as well:
-                    qc.invalidateQueries({ queryKey: ["tasks", "today"] });
-                  } catch (err) {
-                    console.error("Failed to remove goal/update task:", err);
-                    if (prevGoalId) qc.setQueryData(["tasks", "byGoal", prevGoalId], prevTasksByGoal);
-                    qc.setQueryData(["tasks"], prevTasksAll);
+                  // optimistic: remove task from caches used by UI
+                  if (prevGoalId) {
+                    qc.setQueryData(["tasks", "byGoal", prevGoalId], (old = []) =>
+                      old.filter((t) => String(t.id) !== String(task.id))
+                    );
                   }
+                  qc.setQueryData(["tasks"], (old = []) => (old || []).filter((t) => String(t.id) !== String(task.id)));
+                  qc.setQueryData(["tasks", "today"], (old = []) => (old || []).filter((t) => String(t.id) !== String(task.id)));
+
+                  const payload = { id: task.id, goal_id: null, isToday: false };
+                  console.debug("Updating task (optimistic):", payload);
+
+                  updateTaskMutation.mutate(payload, {
+                    onSuccess: (res) => {
+                      console.debug("Update success:", res);
+                      // make sure server state is reflected (safe refresh)
+                      qc.invalidateQueries(["tasks"]);
+                      if (prevGoalId) qc.invalidateQueries(["tasks", "byGoal", prevGoalId]);
+                      qc.invalidateQueries(["tasks", "today"]);
+                    },
+                    onError: (err) => {
+                      console.error("Failed to update task:", err);
+                      // rollback caches
+                      if (prevGoalId) qc.setQueryData(["tasks", "byGoal", prevGoalId], prevTasksByGoal);
+                      qc.setQueryData(["tasks"], prevTasksAll);
+                      qc.setQueryData(["tasks", "today"], prevToday);
+                    },
+                  });
                 }}
                 className="p-2 text-red-600 hover:bg-red-50 rounded-md transition"
                 title={t("tooltip_remove_goal")}
