@@ -314,14 +314,23 @@ const SortableTaskItem = ({
                         old.filter((t) => String(t.id) !== String(task.id))
                       );
                     }
+
+                    // optimistically remove from global tasks cache so it disappears from today's list immediately
                     qc.setQueryData(["tasks"], (old = []) => old.filter((t) => String(t.id) !== String(task.id)));
 
-                    await updateTaskMutation.mutateAsync({ id: task.id, goal_id: null });
+                    // prepare payload: remove goal and, if currently isToday, set isToday=false so it leaves today's list
+                    const payload = { id: task.id, goal_id: null };
+                    if (task.isToday) payload.isToday = false;
 
+                    await updateTaskMutation.mutateAsync(payload);
+
+                    // ensure queries are fresh
                     qc.invalidateQueries({ queryKey: ["tasks"] });
                     if (prevGoalId) qc.invalidateQueries({ queryKey: ["tasks", "byGoal", prevGoalId] });
+                    // if you have a dedicated today query key, invalidate it as well:
+                    qc.invalidateQueries({ queryKey: ["tasks", "today"] });
                   } catch (err) {
-                    console.error("Failed to remove goal from task:", err);
+                    console.error("Failed to remove goal/update task:", err);
                     if (prevGoalId) qc.setQueryData(["tasks", "byGoal", prevGoalId], prevTasksByGoal);
                     qc.setQueryData(["tasks"], prevTasksAll);
                   }
