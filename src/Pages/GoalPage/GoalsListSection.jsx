@@ -125,24 +125,29 @@ const GoalsListSection = () => {
       ) : (
         <ul className="space-y-3">
           {goals.map((g) => (
-            <li key={g.id} className="border border-[#f4e1e6] rounded-lg px-3 py-2 bg-white">
+            <li key={g.id} className="relative z-10 border border-[#f4e1e6] rounded-lg px-3 py-2 bg-white">
               <div className="flex items-center justify-between w-full">
                 <div className="flex-1">
                   {editingId === g.id ? (
-                    <div className="flex gap-2 items-center">
+                    <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                       <input
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="border px-2 py-1 rounded-md text-sm w-full"
                       />
                       <button
-                        onClick={() => editGoalMutation.mutate({ id: g.id, name: editName })}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          editGoalMutation.mutate({ id: g.id, name: editName });
+                        }}
                         className="text-sm text-[#b33a3a] font-semibold"
                         disabled={editGoalMutation.isLoading}
                       >
                         {editGoalMutation.isLoading ? t("Saving…") : t("Save")}
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingId(null);
