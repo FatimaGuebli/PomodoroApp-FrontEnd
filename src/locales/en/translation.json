@@ -156,6 +156,14 @@
   "profile_updated": "Profile updated",
   "profile_error": "Profile error:",
 
+  "btn_delete" : "Delete",
+  "btn_discard" : "Discard",
+  "btn_save" : "Save",
+  "label_description" : "Description",
+  "label_pomodoros_done" : "Pomodoros done",
+  "label_pomodoros_total" : "Pomodoros total",
+  "label_goal" : "Goal",
+
   "_comment_quotes": "quotes translations",
   "your_motivational_quotes": "Your Motivational Quotes",
   "quote_placeholder": "Write a short motivating quote...",
