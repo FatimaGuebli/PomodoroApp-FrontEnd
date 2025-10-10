@@ -163,6 +163,9 @@
   "label_pomodoros_done" : "Pomodoros done",
   "label_pomodoros_total" : "Pomodoros total",
   "label_goal" : "Goal",
+  "confirm_delete_task_title" : "Delete task",
+  "confirm_delete_task_body" : "Are you sure you want to permanently delete this task?",
+  "btn_cancel" : "Cancel",
 
   "_comment_quotes": "quotes translations",
   "your_motivational_quotes": "Your Motivational Quotes",
