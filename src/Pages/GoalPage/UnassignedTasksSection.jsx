@@ -5,6 +5,7 @@ import SortableTaskItem from "../PomodoroPage/TaskSection/SortableTaskItem";
 import { useAuth } from "../../hooks/useAuth";
 import SignInModal from "../../components/SignInModal";
 import { useTranslation } from "react-i18next";
+import { useUpdateTask } from "../../hooks/useTaskMutations";
 
 const UnassignedTasksSection = () => {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ const UnassignedTasksSection = () => {
   const [assignForTaskId, setAssignForTaskId] = useState(null);
   const [chosenGoalId, setChosenGoalId] = useState("");
   const qc = useQueryClient();
+  const updateTask = useUpdateTask();
 
   const { data: tasks = [], isLoading, isError } = useQuery({
     queryKey: ["tasks", "unassigned"],
@@ -43,19 +45,18 @@ const UnassignedTasksSection = () => {
     retry: false,
   });
 
-  const assignGoalMutation = useMutation({
-    mutationFn: async ({ taskId, goalId }) => {
-      const { data, error } = await supabase.from("tasks").update({ goal_id: goalId }).eq("id", taskId).select().single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-      qc.invalidateQueries({ queryKey: ["goals"] });
-      setAssignForTaskId(null);
-      setChosenGoalId("");
-    },
-  });
+  // use shared updateTask mutation for assigning a goal (keeps cache logic consistent)
+  const assignGoalMutation = {
+    mutate: (payload) => updateTask.mutate(payload, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["tasks", "unassigned"] });
+        qc.invalidateQueries({ queryKey: ["goals"] });
+        setAssignForTaskId(null);
+        setChosenGoalId("");
+      },
+    }),
+    isLoading: updateTask.isLoading,
+  };
 
   return (
     <section className="soft-panel animate-fadeIn">
@@ -94,7 +95,7 @@ const UnassignedTasksSection = () => {
                       ))}
                     </select>
                     <button
-                      onClick={() => assignGoalMutation.mutate({ taskId: titem.id, goalId: chosenGoalId || null })}
+                      onClick={() => assignGoalMutation.mutate({ id: titem.id, goal_id: chosenGoalId || null })}
                       disabled={assignGoalMutation.isLoading || !chosenGoalId}
                       className="px-2 py-1 bg-[#b33a3a] text-white rounded-md text-sm"
                     >
