@@ -248,10 +248,13 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
   };
 
   const handleSkip = () => {
-    clearInterval(timerRef.current);
+    if (timerRef.current) {
+      cancelAnimationFrame(timerRef.current);
+      timerRef.current = null;
+    }
     setShouldTransition(true);
   };
-
+ 
   const percentage = ((currentSession.seconds - secondsLeft) / currentSession.seconds) * 100;
 
   // Show task only during focus sessions; hide during breaks
@@ -275,21 +278,24 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
 
   // switch immediately to the given session (no extra side-effects beyond stopping timer and snapshot handling)
   const switchToSession = (sessionKey) => {
-    const target = pomodoroSessionArray.find((s) => s.sessionName === sessionKey);
-    if (!target) return;
-    // stop running timer
-    clearInterval(timerRef.current);
-    setIsRunning(false);
-    setCurrentSession(target);
-    setSecondsLeft(target.seconds);
-    // clear snapshot on non-focus; set snapshot if switching to focus and a task is selected
-    if (sessionKey !== "focus") {
-      setActiveTaskSnapshot(null);
-    } else if (selectedTask) {
-      setActiveTaskSnapshot(selectedTask);
+     const target = pomodoroSessionArray.find((s) => s.sessionName === sessionKey);
+     if (!target) return;
+     // stop running timer
+     if (timerRef.current) {
+      cancelAnimationFrame(timerRef.current);
+      timerRef.current = null;
     }
-  };
-
+     setIsRunning(false);
+     setCurrentSession(target);
+     setSecondsLeft(target.seconds);
+     // clear snapshot on non-focus; set snapshot if switching to focus and a task is selected
+     if (sessionKey !== "focus") {
+       setActiveTaskSnapshot(null);
+     } else if (selectedTask) {
+       setActiveTaskSnapshot(selectedTask);
+     }
+   };
+ 
   const { data: quotes = [] } = useQuery({
     queryKey: ["userQuotes", user?.id],
     queryFn: async () => {
