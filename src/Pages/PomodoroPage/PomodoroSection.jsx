@@ -72,6 +72,7 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
   }, [focusSeconds, shortBreakSeconds, longBreakSeconds, currentSession?.sessionName, isRunning]);
  
   const timerRef = useRef(null);
+  const endTimeRef = useRef(null); // absolute ms timestamp when the current session should end
   const endAudioRef = useRef(null);
   const clickSoundRef = useRef(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -91,20 +92,43 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
     return `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
+  // Accurate timer: compute remaining seconds from an absolute end timestamp.
+  // This avoids interval drift and browser timer throttling issues.
   useEffect(() => {
     if (!isRunning) return;
-    timerRef.current = setInterval(() => {
+
+    const tick = () => {
+      const end = endTimeRef.current ?? (Date.now() + secondsLeft * 1000);
+      const remainingMs = Math.max(0, end - Date.now());
+      const remainingSec = Math.ceil(remainingMs / 1000);
+
       setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          setTimeout(() => setShouldTransition(true), 0);
-          return 0;
-        }
-        return prev - 1;
+        // update only when value changes to avoid extra re-renders
+        return remainingSec !== prev ? remainingSec : prev;
       });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [isRunning]);
+
+      if (remainingMs <= 0) {
+        // finished
+        endTimeRef.current = null;
+        setIsRunning(false);
+        setTimeout(() => setShouldTransition(true), 0);
+        return;
+      }
+
+      // schedule next frame (smooth, keeps accurate time)
+      timerRef.current = requestAnimationFrame(tick);
+    };
+
+    // ensure endTimeRef is set when starting
+    if (!endTimeRef.current) {
+      endTimeRef.current = Date.now() + secondsLeft * 1000;
+    }
+
+    timerRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (timerRef.current) cancelAnimationFrame(timerRef.current);
+    };
+  }, [isRunning, secondsLeft]);
 
   // always snapshot at start of each focus session (refreshes for subsequent focuses)
   useEffect(() => {
@@ -207,12 +231,19 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
       setShowSignIn(true);
       return;
     }
-    // Allow starting focus even if no task selected
+    // set absolute end timestamp and start (makes resume accurate)
+    endTimeRef.current = Date.now() + secondsLeft * 1000;
     setIsRunning(true);
   };
 
   const handlePause = () => {
     playClick();
+    // compute remaining seconds from endTimeRef and clear it
+    if (endTimeRef.current) {
+      const remainingMs = Math.max(0, endTimeRef.current - Date.now());
+      setSecondsLeft(Math.ceil(remainingMs / 1000));
+      endTimeRef.current = null;
+    }
     setIsRunning(false);
   };
 
