@@ -41,6 +41,7 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
   const [shouldTransition, setShouldTransition] = useState(false);
   const [activeTaskSnapshot, setActiveTaskSnapshot] = useState(null);
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  const timerRef = useRef(null); // ensure timerRef exists for RAF/interval cancellation
 
   // todays tasks shown in the "today" list
   // (SelectExistingTask removed) — no local todaysTasks/newlyCreatedTaskId in this component now
