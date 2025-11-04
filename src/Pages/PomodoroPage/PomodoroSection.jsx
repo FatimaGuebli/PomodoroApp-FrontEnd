@@ -71,8 +71,9 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
   // include currentSession.sessionName and isRunning so we compute correct target
   }, [focusSeconds, shortBreakSeconds, longBreakSeconds, currentSession?.sessionName, isRunning]);
  
-  const timerRef = useRef(null);
-  const endTimeRef = useRef(null); // absolute ms timestamp when the current session should end
+  const workerRef = useRef(null);
+  const endTimeRef = useRef(null);
+  const audioCtxRef = useRef(null);
   const endAudioRef = useRef(null);
   const clickSoundRef = useRef(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -90,6 +91,46 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
     const mins = Math.floor(secs / 60);
     const sec = secs % 60;
     return `${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+// create worker once and handle messages
+  useEffect(() => {
+    try {
+      workerRef.current = new Worker(new URL("../../workers/timerWorker.js", import.meta.url), { type: "module" });
+      workerRef.current.onmessage = (ev) => {
+        const msg = ev.data;
+        if (msg.type === "tick") {
+          setSecondsLeft((prev) => (prev === msg.remainingSec ? prev : msg.remainingSec));
+        } else if (msg.type === "done") {
+          setSecondsLeft(0);
+          setIsRunning(false);
+          // play sound / notify / transition
+          playEndSound?.();
+          setTimeout(() => setShouldTransition(true), 0);
+        }
+      };
+    } catch (err) {
+      console.warn("Timer worker not available, falling back to main-thread timing", err);
+      workerRef.current = null;
+    }
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.postMessage({ cmd: "clear" });
+        workerRef.current.terminate?.();
+        workerRef.current = null;
+      }
+    };
+  }, []);
+
+// helpers to start/stop worker
+  const startWorkerTimer = (secs) => {
+    const end = Date.now() + secs * 1000;
+    endTimeRef.current = end;
+    try { workerRef.current?.postMessage({ cmd: "start", endTime: end }); } catch (e) {}
+  };
+  const stopWorkerTimer = () => {
+    try { workerRef.current?.postMessage({ cmd: "stop" }); } catch (e) {}
+    endTimeRef.current = null;
   };
 
   // Accurate timer: compute remaining seconds from an absolute end timestamp.
@@ -234,6 +275,7 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
     // set absolute end timestamp and start (makes resume accurate)
     endTimeRef.current = Date.now() + secondsLeft * 1000;
     setIsRunning(true);
+    startWorkerTimer(secondsLeft);
   };
 
   const handlePause = () => {
@@ -245,6 +287,7 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
       endTimeRef.current = null;
     }
     setIsRunning(false);
+    stopWorkerTimer();
   };
 
   const handleSkip = () => {
