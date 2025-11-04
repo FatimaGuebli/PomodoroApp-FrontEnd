@@ -69,8 +69,8 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
         return found.seconds;
       });
     }
-  // include currentSession.sessionName and isRunning so we compute correct target
-  }, [focusSeconds, shortBreakSeconds, longBreakSeconds, currentSession?.sessionName, isRunning]);
+  // include currentSession.sessionName but NOT isRunning — avoid resetting secondsLeft when pausing/resuming
+  }, [focusSeconds, shortBreakSeconds, longBreakSeconds, currentSession?.sessionName]);
  
   const workerRef = useRef(null);
   const endTimeRef = useRef(null);
@@ -275,8 +275,8 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
     }
     // set absolute end timestamp and start (makes resume accurate)
     endTimeRef.current = Date.now() + secondsLeft * 1000;
-    setIsRunning(true);
     startWorkerTimer(secondsLeft);
+    setIsRunning(true);
   };
 
   const handlePause = () => {
@@ -287,8 +287,10 @@ const PomodoroSection = ({ selectedTask, setSelectedTask, tasks, setTasks }) => 
       setSecondsLeft(Math.ceil(remainingMs / 1000));
       endTimeRef.current = null;
     }
-    setIsRunning(false);
+    // stop worker before toggling isRunning so the durations-sync effect (now not depending on isRunning)
+    // doesn't overwrite the snapshot
     stopWorkerTimer();
+    setIsRunning(false);
   };
 
   const handleSkip = () => {
